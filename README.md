@@ -45,7 +45,8 @@ replaced by `~`, `<user>`, `<host>`, so it is safe to paste into an issue.
 | OS / shell | Status |
 |---|---|
 | WSL / Linux bash | yes |
-| macOS zsh, fish, Windows pwsh | not yet |
+| zsh (`install.sh --shell zsh`) | hook block syntax-checked with `zsh -n` where zsh is installed; not run on a real zsh yet |
+| macOS, fish, Windows pwsh | not yet |
 
 | Agent | Status |
 |---|---|

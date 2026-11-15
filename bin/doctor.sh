@@ -25,9 +25,16 @@ chk "starship on PATH" "bin/install.sh" command -v starship
 chk "starship version = $STARSHIP_VERSION" "bin/install.sh" bash -c "[[ v\$(starship --version | head -1 | awk '{print \$2}') == $STARSHIP_VERSION ]]"
 chk "config symlink -> repo" "bin/install.sh" bash -c "[[ \$(readlink ~/.config/starship.toml) == '$REPO/starship/starship.toml' ]]"
 chk "config renders (STARSHIP_CONFIG parse)" "fix TOML" bash -c "starship prompt >/dev/null"
-chk "hook exactly once" "remove duplicate '# prompt-kit' in ~/.bashrc" bash -c "[[ \$(grep -c '^# prompt-kit' ~/.bashrc) == 1 ]]"
-chk "hook is last in .bashrc" "move block to end of ~/.bashrc" bash -c "tail -n 1 ~/.bashrc | grep -q 'starship init bash'"
-if grep -nE 'oh-my-posh|p10k|powerlevel' ~/.bashrc >/dev/null 2>&1; then echo "FAIL  no p10k/oh-my-posh in .bashrc  → disable it"; bad=1; else echo "PASS  no p10k/oh-my-posh in .bashrc"; fi
+found=0
+for rc in ~/.bashrc ~/.zshrc; do
+  [[ -f $rc ]] && grep -q '^# prompt-kit' "$rc" || continue
+  found=1; b=$(basename "$rc")
+  chk "hook exactly once in $b" "remove the duplicate '# prompt-kit' block in $b" bash -c "[[ \$(grep -c '^# prompt-kit' '$rc') == 1 ]]"
+  chk "hook is last in $b" "move the block to the end of $b" bash -c "tail -n 1 '$rc' | grep -q 'starship init'"
+  if grep -nE 'oh-my-posh|p10k|powerlevel' "$rc" >/dev/null 2>&1; then echo "FAIL  no p10k/oh-my-posh in $b  → disable it"; bad=1; else echo "PASS  no p10k/oh-my-posh in $b"; fi
+done
+(( found )) || { echo "FAIL  prompt-kit hook not found in ~/.bashrc or ~/.zshrc  → bin/install.sh"; bad=1; }
+"$REPO/bin/check-hook.sh" || bad=1   # prints PASS / FAIL / SKIP (shell not installed) per shell
 chk "agent reader linked" "bin/install.sh" test -x ~/.local/bin/prompt-kit-agent-read
 if grep -qi microsoft /proc/version 2>/dev/null && command -v powershell.exe >/dev/null 2>&1; then
   chk "Nerd Font on Windows host" "winget install DEVCOM.JetBrainsMonoNerdFont" bash -c "powershell.exe -NoProfile -c \"Get-ChildItem C:\\Windows\\Fonts,\\\$env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts -ErrorAction SilentlyContinue | Where-Object Name -like 'JetBrainsMono*'\" | grep -q ."

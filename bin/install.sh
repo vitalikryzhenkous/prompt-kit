@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# prompt-kit installer (linux / WSL, bash). Idempotent. Flags: --dry-run --no-font --no-hook --with claude-code
+# prompt-kit installer (linux / WSL; bash or zsh hook). Idempotent. Flags: --dry-run --no-font --no-hook --shell bash|zsh --with claude-code
 set -euo pipefail
 REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
@@ -7,9 +7,10 @@ REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # PROMPT_KIT_DIR (default $XDG_DATA_HOME/prompt-kit) is where the README clones to; the repo is always found from this script's location
 want=${PROMPT_KIT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/prompt-kit}
 [[ -d $want && $(cd "$want" && pwd -P) == "$(cd "$REPO" && pwd -P)" ]] || echo "• note: installing from $REPO (PROMPT_KIT_DIR default would be $want); symlinks and settings will point here" >&2
-DRY=0; FONT=1; HOOK=1; WITH=()
+DRY=0; FONT=1; HOOK=1; WITH=(); KIND=$(basename "${SHELL:-bash}"); [[ $KIND == zsh ]] || KIND=bash
 while (( $# )); do case $1 in
   --dry-run) DRY=1;; --no-font) FONT=0;; --no-hook) HOOK=0;;
+  --shell) shift; KIND=${1:-}; [[ $KIND == bash || $KIND == zsh ]] || { echo "--shell bash|zsh" >&2; exit 2; };;
   --with) shift; WITH+=("$1");;
   *) echo "unknown flag: $1" >&2; exit 2;; esac; shift; done
 TS=$(date +%Y%m%d-%H%M%S); FAILS=(); TOUCHED=()
@@ -28,7 +29,7 @@ for t in $(pk_missing_tools); do
 done
 (( hard == 0 )) || exit 1
 grep -qi microsoft /proc/version 2>/dev/null && WSL=1 || WSL=0
-say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; shell=bash; with=${WITH[*]:-none}"
+say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; shell=$KIND; with=${WITH[*]:-none}"
 
 # 1. starship (pinned)
 have=$(starship --version 2>/dev/null | head -1 | awk '{print $2}' || true)
@@ -61,21 +62,15 @@ else touch_ "$rd"; if (( DRY )); then say "WOULD symlink $rd -> bin/agent-read.s
 touch_ "$HOME/.cache/agent-status/"
 (( DRY )) && say "WOULD mkdir -m700 ~/.cache/agent-status" || { mkdir -p "$HOME/.cache/agent-status"; chmod 700 "$HOME/.cache/agent-status"; }
 
-# 4. bashrc hook (once, last)
-rc=$HOME/.bashrc
+# 4. shell hook (once, last): ~/.bashrc or ~/.zshrc, block text from bin/hook-block.sh
+rc=$HOME/.${KIND}rc
 if (( HOOK )); then
-  if grep -q '^# prompt-kit' "$rc" 2>/dev/null; then say "hook already in .bashrc"
+  if grep -q '^# prompt-kit' "$rc" 2>/dev/null; then say "hook already in $rc"
   else
     grep -nE 'oh-my-posh|p10k|powerlevel|conda initialize|^ *(export )?PS1=' "$rc" 2>/dev/null | sed 's/^/  ⚠ possible prompt override: /' || true
     touch_ "$rc"; backup "$rc"
-    if (( DRY )); then say "WOULD append '# prompt-kit' block (PATH + starship init bash) to $rc"
-    else cat >> "$rc" <<'HOOK'
-
-# prompt-kit
-case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH";; esac
-eval "$(starship init bash)"
-HOOK
-      say "hook appended to $rc"; fi
+    if (( DRY )); then say "WOULD append '# prompt-kit' block (PATH + starship init $KIND) to $rc"
+    else "$REPO/bin/hook-block.sh" "$KIND" >> "$rc"; say "hook appended to $rc"; fi
   fi
 fi
 
