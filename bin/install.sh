@@ -114,6 +114,8 @@ AGENT_WARN_AT=70
 AGENT_ROOT_AT=90
 # Claude Code's JSON has no compact threshold field: this is a configured value
 AGENT_COMPACT_AT=95
+# statusline segments, in order: model cwd git ctx cost | ext (executables in segments.d/) | inner. Native ctx = ◰ N%
+STATUSLINE_SEGMENTS="model cwd git ctx cost ext"
 ENV
       chmod 600 "$ae"; say "created $ae"; }; fi
   if [[ ! -e $se ]]; then touch_ "$se"
@@ -122,7 +124,7 @@ ENV
         || { mkdir -p "$cfgd"; printf '# migrated from inner-statusline (output unchanged); the old file is still used, do not delete it\nSEGMENTS="inner gauge"\nSEP=" "\nINNER_COMMAND='"'"'sh %s'"'"'\n' "$oldin" > "$se"; chmod 600 "$se"; say "migrated $oldin -> $se (old file kept)"; }
     else
       (( DRY )) && say "WOULD create $se (default segments)" \
-        || { mkdir -p "$cfgd/segments.d"; printf '# segments, in order: model ctx cwd git cost gauge | inner (INNER_COMMAND) | ext (executables in segments.d/) ; ~name = run but hide\nSEGMENTS="model ctx cwd git cost gauge"\nSEP=" · "\n' > "$se"; chmod 600 "$se"; say "created $se"; }
+        || { mkdir -p "$cfgd/segments.d"; printf '# separator; segment list is STATUSLINE_SEGMENTS in agent.env ; ~name = run but hide\nSEP=" · "\n' > "$se"; chmod 600 "$se"; say "created $se"; }
     fi; fi
   # SessionEnd hook removes this session's state file (idempotent: matched by command path)
   hk=$REPO/adapters/claude-code/session-end.sh

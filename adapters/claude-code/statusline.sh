@@ -9,7 +9,7 @@ cfgdir=${PROMPT_KIT_CONFIG:-$HOME/.config/prompt-kit}
 # shellcheck disable=SC1091
 . "$here/../../bin/env-load.sh"
 pk_load_env "$cfgdir/statusline.env" SEGMENTS SEP INNER_COMMAND
-pk_load_env "$cfgdir/agent.env" AGENT_COMPACT_AT
+pk_load_env "$cfgdir/agent.env" AGENT_COMPACT_AT STATUSLINE_SEGMENTS
 [[ ${AGENT_COMPACT_AT:-95} =~ ^[0-9]+$ ]] || AGENT_COMPACT_AT=95
 dir=${AGENT_STATUS_DIR:-$HOME/.cache/agent-status}
 mkdir -p "$dir"; chmod 700 "$dir"
@@ -43,7 +43,7 @@ if [[ -n $state && -n $sid ]]; then
 fi
 
 # ---- segments: SEGMENTS is an ordered list of tokens; empty output is skipped, joined with SEP.
-# native: model ctx cwd git cost gauge | inner (INNER_COMMAND) | ext (every executable in segments.d/, sorted)
+# list: STATUSLINE_SEGMENTS in agent.env (legacy: SEGMENTS in statusline.env). native: model cwd git ctx(=gauge, ◰ N%) cost | inner (INNER_COMMAND) | ext (every executable in segments.d/, sorted)
 # a leading ~ runs the segment but hides its output (e.g. ~ext keeps a side-effect script running).
 j() { printf '%s' "$in" | jq -r "$1" 2>/dev/null || true; }
 cur=$(j '.workspace.current_dir // .cwd // empty')
@@ -52,18 +52,17 @@ run_exec() { printf '%s' "$in" | timeout -k 1 3 "$1" 2>/dev/null || true; }     
 seg() {
   case $1 in
     model) j '.model.display_name // empty' ;;
-    ctx) p=$(j '.context_window.used_percentage // empty | round'); [[ -n $p ]] && printf 'ctx %s%%' "$p" ;;
     cwd) if [[ -n $cur ]]; then t=$cur; [[ $t == "$HOME" || $t == "$HOME"/* ]] && t="~${t#"$HOME"}"; printf '%s' "$t"; fi ;;
     git) [[ -n $cur ]] && { b=$(timeout 1 git -C "$cur" branch --show-current 2>/dev/null || true)
-           [[ -n $b ]] && { [[ -n $(timeout 1 git -C "$cur" --no-optional-locks status --porcelain -uno 2>/dev/null | head -1) ]] && b+='*'; printf ' %s' "$b"; }; } ;;
+           [[ -n $b ]] && { [[ -n $(timeout 1 git -C "$cur" --no-optional-locks status --porcelain -uno 2>/dev/null | head -1) ]] && b+='*'; printf '\xee\x82\xa0 %s' "$b"; }; } ;;
     cost) c=$(j '.cost.total_cost_usd // empty'); [[ -n $c ]] && LC_ALL=C printf '$%.2f' "$c" ;;
-    gauge) p=$(j '.context_window.used_percentage // empty | round'); [[ -n $p ]] && printf '◰ %s%%' "$p" ;;
+    ctx|gauge) p=$(j '.context_window.used_percentage // empty | round'); [[ -n $p ]] && printf '◰ %s%%' "$p" ;;
     inner) [[ -n ${INNER_COMMAND:-} ]] && run_cmd "$INNER_COMMAND" ;;
     ext) for x in "$cfgdir"/segments.d/*; do [[ -f $x && -x $x ]] && { (( SECONDS - t0 < 4 )) || break; run_exec "$x"; }; done ;;
   esac
 }
 t0=$SECONDS; parts=()
-for tok in ${SEGMENTS:-model ctx cwd git cost gauge}; do
+for tok in ${STATUSLINE_SEGMENTS:-${SEGMENTS:-model cwd git ctx cost ext}}; do
   hide=0; [[ $tok == '~'* ]] && { hide=1; tok=${tok#\~}; }
   o=$(seg "$tok" 2>/dev/null || true); o=${o//$'\n'/ }
   (( hide )) || [[ -z $o ]] || parts+=("$o")
