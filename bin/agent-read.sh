@@ -2,11 +2,15 @@
 # usage: agent-read.sh normal|warn|root
 # Reads per-session files <provider>.<session>.json, keeps the live ones for this directory,
 # prints the gauge only if the worst session matches the level; else nothing.
-# env: AGENT_SHOW=pct|tokens|bar  AGENT_WARN_AT  AGENT_ROOT_AT  AGENT_TTL (agent.ttl, 300)  AGENT_SCOPE=cwd|any (agent.scope)
+# params: ~/.config/prompt-kit/agent.env (KEY=VALUE), an env var of the same name overrides.
+# AGENT_SHOW=pct|tokens|bar|compact  AGENT_WARN_AT=70  AGENT_ROOT_AT=90  AGENT_TTL=300  AGENT_SCOPE=cwd|any  AGENT_COMPACT_AT=95
 set -euo pipefail
 level=${1:-normal}
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/env-load.sh"
+pk_load_env "${PROMPT_KIT_CONFIG:-$HOME/.config/prompt-kit}/agent.env" AGENT_SHOW AGENT_TTL AGENT_SCOPE AGENT_WARN_AT AGENT_ROOT_AT AGENT_COMPACT_AT
 dir=${AGENT_STATUS_DIR:-$HOME/.cache/agent-status}
-show=${AGENT_SHOW:-pct}; ttl=${AGENT_TTL:-300}; warn=${AGENT_WARN_AT:-70}; root=${AGENT_ROOT_AT:-90}; scope=${AGENT_SCOPE:-cwd}
+show=${AGENT_SHOW:-pct}; ttl=${AGENT_TTL:-300}; warn=${AGENT_WARN_AT:-70}; root=${AGENT_ROOT_AT:-90}; scope=${AGENT_SCOPE:-cwd}; compact=${AGENT_COMPACT_AT:-95}
 here=$(realpath -m "${PWD:-.}")
 shopt -s nullglob
 files=()
@@ -33,6 +37,7 @@ if (( pct >= root )); then actual=root; elif (( pct >= warn )); then actual=warn
 [[ $actual == "$level" ]] || exit 0
 case $show in
   tokens) [[ $wleft =~ ^[0-9]+$ ]] && txt="$((wleft/1000))k left" || txt="${pct}%" ;;
+  compact) c=$((compact-pct)); (( c < 0 )) && c=0; txt="${c}% to compact" ;;
   bar) b=$(( (pct*5+50)/100 )); txt=$(printf '%*s' "$b" '' | tr ' ' '█')$(printf '%*s' "$((5-b))" '' | tr ' ' '░') ;;
   *) txt="${pct}%" ;;
 esac

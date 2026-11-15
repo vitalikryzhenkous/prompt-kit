@@ -29,10 +29,9 @@ echo "== ANSI"; starship prompt --terminal-width 90
 echo; echo "== plain"; starship prompt --terminal-width 90 | sed 's/\x1b\[[0-9;]*m//g; s/\x01//g; s/\x02//g'
 if [[ ${PREVIEW_SCOPES:-1} == 1 ]]; then
   strip() { sed 's/\x1b\[[0-9;]*m//g; s/\x01//g; s/\x02//g'; }
-  anycfg=/tmp/preview-any.toml; sed 's/AGENT_SCOPE=cwd/AGENT_SCOPE=any/' "$cfg" > "$anycfg"
   echo; echo "== scope=cwd, in $repo (expect 1 session: 42%)";      starship prompt --terminal-width 90 | strip | head -1
-  echo "== scope=any, in $repo (expect 2×, worst 75% -> warn)";   STARSHIP_CONFIG=$anycfg starship prompt --terminal-width 90 | strip | head -1
+  echo "== scope=any, in $repo (expect 2×, worst 75% -> warn)";   AGENT_SCOPE=any starship prompt --terminal-width 90 | strip | head -1
   mkdir -p /tmp/preview-unrelated; cd /tmp/preview-unrelated
   echo "== scope=cwd, in unrelated dir (expect no gauge)";        starship prompt --terminal-width 90 | strip | head -1
-  echo "== scope=any, in unrelated dir (expect 2×)";              STARSHIP_CONFIG=$anycfg starship prompt --terminal-width 90 | strip | head -1
+  echo "== scope=any, in unrelated dir (expect 2×)";              AGENT_SCOPE=any starship prompt --terminal-width 90 | strip | head -1
 fi

@@ -62,23 +62,23 @@ success_symbol = "[❯](bold fg:node)"
 error_symbol = "[❯](bold fg:root)"
 
 # Agent gauge: prompt-kit-agent-read prints text only when its level matches.
-# Keys via env: AGENT_SHOW=pct|tokens|bar  AGENT_WARN_AT  AGENT_ROOT_AT  AGENT_TTL
+# Parameters (show, ttl, scope, warn_at, root_at, compact_at): ~/.config/prompt-kit/agent.env, see docs/wiki/Agents.md
 [custom.agent]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read normal"
+command = "prompt-kit-agent-read normal"
 when = true
 format = "([](fg:pill)[ $output ]($style)[](fg:pill) )"
 style = "fg:agent bg:pill"
 shell = ["sh"]
 
 [custom.agent_warn]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read warn"
+command = "prompt-kit-agent-read warn"
 when = true
 format = "([](fg:pill)[ $output ]($style)[](fg:pill) )"
 style = "bold fg:warn bg:pill"
 shell = ["sh"]
 
 [custom.agent_root]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read root"
+command = "prompt-kit-agent-read root"
 when = true
 format = "([](fg:pill)[ $output ]($style)[](fg:pill) )"
 style = "bold fg:root bg:pill"
