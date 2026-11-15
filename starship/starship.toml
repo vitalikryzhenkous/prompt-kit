@@ -55,21 +55,21 @@ error_symbol = "[❯](bold fg:root)"
 # Agent gauge: prompt-kit-agent-read prints text only when its level matches.
 # Keys via env: AGENT_SHOW=pct|tokens|bar  AGENT_WARN_AT  AGENT_ROOT_AT  AGENT_TTL
 [custom.agent]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=120 prompt-kit-agent-read normal"
+command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read normal"
 when = true
 format = "[$output]($style) "
 style = "fg:agent"
 shell = ["sh"]
 
 [custom.agent_warn]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=120 prompt-kit-agent-read warn"
+command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read warn"
 when = true
 format = "[$output]($style) "
 style = "bold fg:warn"
 shell = ["sh"]
 
 [custom.agent_root]
-command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=120 prompt-kit-agent-read root"
+command = "AGENT_SHOW=pct AGENT_WARN_AT=70 AGENT_ROOT_AT=90 AGENT_TTL=300 AGENT_SCOPE=cwd prompt-kit-agent-read root"
 when = true
 format = "[$output]($style) "
 style = "bold fg:root"

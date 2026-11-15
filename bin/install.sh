@@ -99,6 +99,17 @@ for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
     say "statusLine AFTER:  $after"
     if (( ! DRY )); then out=$(jq --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c' "$S") && cat <<<"$out" > "$S"; fi
   fi
+  # SessionEnd hook removes this session's state file (idempotent: matched by command path)
+  hk=$REPO/adapters/claude-code/session-end.sh
+  if jq -e --arg c "$hk" '[.hooks.SessionEnd[]?.hooks[]?.command]|index($c)' "$S" >/dev/null 2>&1; then say "SessionEnd hook already set"
+  else
+    touch_ "$S"; backup "$S"
+    if (( DRY )); then say "WOULD add SessionEnd hook $hk to settings.json"
+    else out=$(jq --arg c "$hk" '.hooks.SessionEnd += [{"hooks":[{"type":"command","command":$c}]}]' "$S") && cat <<<"$out" > "$S"; say "SessionEnd hook added"; fi
+  fi
+  # legacy single-file state (pre per-session): reader ignores it, the installer removes it
+  old=$HOME/.cache/agent-status/claude-code.json
+  if [[ -e $old ]]; then touch_ "$old"; (( DRY )) && say "WOULD remove legacy $old" || { rm -f "$old"; say "removed legacy $old"; }; fi
 done
 
 echo; echo "== files touched (${#TOUCHED[@]})"; printf '  %s\n' "${TOUCHED[@]}"
