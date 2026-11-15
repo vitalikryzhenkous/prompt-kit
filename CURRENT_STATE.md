@@ -17,6 +17,7 @@
 - [x] guard: bin/check-icons.sh в doctor и preview (+ негативный тест); ловит регрессию 107d977
 - [x] statusline: сегменты через STATUSLINE_SEGMENTS (agent.env); ctx = ◰ N%; uptime-board убран из строки (limits → segments.d/20-limits.sh, отчёт на board → hidden 90-uptime-report.sh)
 - [x] default STATUSLINE_SEGMENTS="model cwd git ctx" (cost opt-in); 90-uptime-report.sh: троттлинг 30 с + фон (statusline.py уже дедуплицирует по изменению)
+- [x] п.7.1 PROMPT_KIT_DIR; п.7.2 WSL-only + WT профиль по имени дистрибутива; п.7.3 deps+hints; п.7.4 uninstall.sh (roundtrip в fake HOME: bashrc и settings.json идентичны оригиналу); п.7.5 README + doctor --report
 - [~] п.6 сегменты + agent.env: код, тесты и ревью opus (8 находок исправлены, 426ada3) готовы; мерж по твоему указанию (agent.env, statusline.env, segments.d, INNER_COMMAND; uptime = segments.d/10-uptime.sh; вывод идентичен)
 - [ ] theme.sh (color|palette|layout|move|agent) + palettes nord, dracula, mono + layouts (split, left, minimal, oneline, rightprompt)
 - [ ] compact_at: implement fields verified; no explicit compact-threshold field in raw.json, so the threshold stays a config value (default 95) — owner to confirm
