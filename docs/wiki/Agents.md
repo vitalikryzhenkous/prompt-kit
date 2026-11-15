@@ -1,7 +1,7 @@
 # Agents
 ## State contract
 One file per session: `~/.cache/agent-status/<provider>.<session>.json`, mode 0600, atomic rename, dir 0700:
-`{"provider","model","ctx_used_pct","ctx_left_tokens","ctx_size","session","cwd","pid","ts"}`.
+`{"provider","model","ctx_used_pct","ctx_left_tokens","ctx_size","ctx_to_compact_pct","session","cwd","pid","ts"}`.
 `cwd` is the full path (needed for matching; the file is 0600 and never leaves the machine). No keys, prompts or project names.
 Files without `<session>` (legacy `<provider>.json`) and `*.raw.json` are ignored by the reader.
 
@@ -20,17 +20,18 @@ files whose pid is dead (crash / kill -9). `install.sh --with claude-code` adds 
 
 ## Claude Code
 `install.sh --with claude-code` sets the `statusLine` key to `adapters/claude-code/statusline.sh` and adds the SessionEnd hook.
-The adapter prints a status line built from **segments**, configured in `~/.config/prompt-kit/statusline.env`:
-- `STATUSLINE_SEGMENTS="model cwd git ctx"` (default; `cost`, `ext`, `inner` are opt-in) in `agent.env` (legacy: `SEGMENTS` in `statusline.env`): ordered tokens, empty output is skipped.
+The adapter prints a status line built from **segments**. The list is `STATUSLINE_SEGMENTS` in `~/.config/prompt-kit/agent.env`;
+the separator and the wrapped command (`SEP`, `INNER_COMMAND`) are in `~/.config/prompt-kit/statusline.env`.
+- `STATUSLINE_SEGMENTS="model cwd git ctx"` (default; `cost`, `ext`, `inner` are opt-in; legacy `SEGMENTS` in `statusline.env` is used only if it is unset): ordered tokens, empty output is skipped.
   Native: `model cwd git ctx cost` (`ctx` = `◰ N%`, `gauge` is an alias). `inner` = the one command in `INNER_COMMAND`. `ext` = every executable in
-  `~/.config/prompt-kit/segments.d/` (sorted; gets the session JSON on stdin, prints text, 3 s timeout).
+  `~/.config/prompt-kit/segments.d/` (sorted; gets the session JSON on stdin, prints text; 3 s timeout each, and scripts after the first 4 s in total are skipped).
   A leading `~` runs the segment but hides its output (keeps a side-effect script running).
 - `SEP=" · "` joins the parts. Values are trimmed at the edges: quote a value that starts or ends with a space (`SEP=" | "`). `INNER_COMMAND=...` is the old wrapper command (kept for one-liners).
 - Migration: an existing `inner-statusline` becomes `INNER_COMMAND` with `SEGMENTS="inner gauge"`, `SEP=" "` (output unchanged; the old file is kept).
   On this machine uptime-board is not in the line any more: `segments.d/20-limits.sh` prints the plan limits (`5h 62% ↻17:40`, `week 71%` from 70%), `segments.d/90-uptime-report.sh` keeps reporting Status events to the board and prints nothing (delete it to stop). `statusline.py` writes only when model/ctx/limits changed; the wrapper adds one run per session per 30 s (`UPTIME_REPORT_MIN_S`) and runs in the background, so an unreachable board cannot delay the line. Tradeoff: the last change inside the 30 s window is reported on the next refresh after it.
 - The adapter never fails: no `set -e`, every segment is guarded, it always prints one line.
 `pid` is the nearest ancestor process named `claude`. First run dumps the stdin JSON to `~/.cache/agent-status/claude-code.raw.json`
-to verify field names on your version. Remove: restore `settings.json.bak.*`.
+to verify field names on your version. Remove: `bin/uninstall.sh` (takes out only our `statusLine` and `SessionEnd` entries; see README).
 
 ## Other providers
 Add an adapter only if the CLI exposes a hook/status event. Codex / Gemini / OpenCode / Cursor: not checked yet.
@@ -38,5 +39,5 @@ Add an adapter only if the CLI exposes a hook/status event. Codex / Gemini / Ope
 ## Icons
 `bin/theme.sh icon <directory|git_branch|nodejs|time|username> <glyph | nf-<set>-<name> | U+XXXX>` rewrites the icon in that module's
 `format` in `starship/starship.toml`. `nf-` names resolve through Nerd Fonts `glyphnames.json` (version and sha256 pinned in
-`bin/versions.env`, cached in `~/.cache/prompt-kit/`). Note: the name is authoritative, a U+ code is not checked against it
-(e.g. `nf-md-robot_excited` is U+F16A3, while U+F069D is `nf-md-folder_star`).
+`bin/versions.env`, cached in `~/.cache/prompt-kit/`). A `U+` code is used as given and is not checked against any name.
+`bin/check-icons.sh` (run by `doctor.sh` and `preview.sh`) fails if a module format has no glyph.

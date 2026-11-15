@@ -110,6 +110,10 @@ fi
 # 6. Claude Code adapter (statusLine key only; old command wrapped)
 for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
   S=$HOME/.claude/settings.json; ours=$REPO/adapters/claude-code/statusline.sh
+  if [[ ! -f $S ]]; then   # Claude Code never started on this machine: start from an empty settings file
+    if (( DRY )); then say "WOULD create $S ({}) — then wire statusLine and the SessionEnd hook"; continue
+    else mkdir -p "$HOME/.claude"; echo '{}' > "$S"; say "created $S"; fi
+  fi
   cur=$(jq -r '.statusLine.command // empty' "$S")
   if [[ $cur == "$ours" ]]; then say "statusLine already points to adapter"
   else

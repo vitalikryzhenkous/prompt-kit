@@ -39,10 +39,14 @@ if grep -qi microsoft /proc/version 2>/dev/null && command -v powershell.exe >/d
   chk "Nerd Font on Windows host" "winget install DEVCOM.JetBrainsMonoNerdFont" bash -c "powershell.exe -NoProfile -c \"Get-ChildItem C:\\Windows\\Fonts,\\\$env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts -ErrorAction SilentlyContinue | Where-Object Name -like 'JetBrainsMono*'\" | grep -q ."
 fi
 chk "icon glyph in every module format" "bin/theme.sh icon <module> nf-<name>" "$REPO/bin/check-icons.sh"
-f=$(ls -t ~/.cache/agent-status/*.json 2>/dev/null | grep -v '\.raw\.json$' | head -1 || true)
-if [[ -n $f ]]; then age=$(( $(date +%s) - $(jq -r '.ts' "$f") )); (( age <= 120 )) && echo "PASS  agent state fresh (${age}s)" || { echo "FAIL  agent state stale (${age}s)  → adapter not running / session idle"; bad=1; }
-else echo "FAIL  no agent state file  → start Claude Code with adapter wired"; bad=1; fi
-chk "Claude Code statusLine → adapter" "bin/install.sh --with claude-code" bash -c "jq -e --arg c '$REPO/adapters/claude-code/statusline.sh' '.statusLine.command==\$c' ~/.claude/settings.json"
+if [[ ! -d ~/.claude ]]; then
+  echo "SKIP  Claude Code adapter checks: ~/.claude not found (run Claude Code once, then bin/install.sh --with claude-code)"
+else
+  f=$(ls -t ~/.cache/agent-status/claude-code.*.json 2>/dev/null | grep -v '\.raw\.json$' | head -1 || true)
+  if [[ -n $f ]]; then age=$(( $(date +%s) - $(jq -r '.ts' "$f") )); (( age <= ${AGENT_TTL:-300} )) && echo "PASS  agent state fresh (${age}s)" || { echo "FAIL  agent state stale (${age}s)  → adapter not running / session idle"; bad=1; }
+  else echo "FAIL  no agent state file  → start a Claude Code session with the adapter wired"; bad=1; fi
+  chk "Claude Code statusLine → adapter" "bin/install.sh --with claude-code" bash -c "jq -e --arg c '$REPO/adapters/claude-code/statusline.sh' '.statusLine.command==\$c' ~/.claude/settings.json"
+fi
 t=$(starship timings 2>/dev/null | awk -F'[│|]' '/ms/ {gsub(/[^0-9.]/,"",$3); if ($3+0>100) print}' || true)
 [[ -z $t ]] && echo "PASS  no module > 100 ms" || { echo "FAIL  slow modules: $t"; bad=1; }
 echo "hint: starship bug-report"; exit $bad
