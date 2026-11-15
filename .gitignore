@@ -1,0 +1,4 @@
+*.bak*
+*.raw.json
+.env*
+secrets/
