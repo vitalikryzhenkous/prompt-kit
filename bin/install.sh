@@ -92,13 +92,49 @@ for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
   else
     say "statusLine BEFORE: $(jq -c '.statusLine // null' "$S")"
     touch_ "$S"; backup "$S"
-    if [[ -n $cur ]]; then touch_ "$HOME/.config/prompt-kit/inner-statusline"
-      (( DRY )) && say "WOULD save old command to ~/.config/prompt-kit/inner-statusline (wrapped by adapter)" \
+    if [[ -n $cur ]]; then touch_ "$HOME/.config/prompt-kit/inner-statusline"   # keep the foreign command; migrated into statusline.env below
+      (( DRY )) && say "WOULD save old command to ~/.config/prompt-kit/inner-statusline" \
         || { mkdir -p "$HOME/.config/prompt-kit"; printf '%s\n' "$cur" > "$HOME/.config/prompt-kit/inner-statusline"; chmod 600 "$HOME/.config/prompt-kit/inner-statusline"; }; fi
     after=$(jq -c --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c | .statusLine' "$S")
     say "statusLine AFTER:  $after"
     if (( ! DRY )); then out=$(jq --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c' "$S") && cat <<<"$out" > "$S"; fi
   fi
+  # config: agent.env (gauge parameters) and statusline.env (segments); never overwritten
+  cfgd=$HOME/.config/prompt-kit; ae=$cfgd/agent.env; se=$cfgd/statusline.env; oldin=$cfgd/inner-statusline
+  if [[ ! -e $ae ]]; then touch_ "$ae"
+    (( DRY )) && say "WOULD create $ae (documented defaults)" || { mkdir -p "$cfgd"; cat > "$ae" <<'ENV'
+# prompt-kit gauge parameters (KEY=VALUE; an env var of the same name wins). Read by the adapter and the reader.
+# AGENT_SHOW: pct | tokens | bar | compact
+AGENT_SHOW=pct
+# seconds a session state stays valid (its pid must also be alive)
+AGENT_TTL=300
+# cwd = sessions in/around the current dir; any = all live sessions
+AGENT_SCOPE=cwd
+AGENT_WARN_AT=70
+AGENT_ROOT_AT=90
+# Claude Code's JSON has no compact threshold field: this is a configured value
+AGENT_COMPACT_AT=95
+ENV
+      chmod 600 "$ae"; say "created $ae"; }; fi
+  if [[ ! -e $se ]]; then touch_ "$se"
+    if [[ -s $oldin ]]; then   # migration: the old wrapped command becomes INNER_COMMAND, output stays as it was
+      (( DRY )) && say "WOULD create $se from $oldin (SEGMENTS=\"inner gauge\", SEP=\" \")" \
+        || { mkdir -p "$cfgd"; printf '# migrated from inner-statusline (output unchanged); the old file is still used, do not delete it\nSEGMENTS="inner gauge"\nSEP=" "\nINNER_COMMAND='"'"'sh %s'"'"'\n' "$oldin" > "$se"; chmod 600 "$se"; say "migrated $oldin -> $se (old file kept)"; }
+    else
+      (( DRY )) && say "WOULD create $se (default segments)" \
+        || { mkdir -p "$cfgd/segments.d"; printf '# segments, in order: model ctx cwd git cost gauge | inner (INNER_COMMAND) | ext (executables in segments.d/) ; ~name = run but hide\nSEGMENTS="model ctx cwd git cost gauge"\nSEP=" · "\n' > "$se"; chmod 600 "$se"; say "created $se"; }
+    fi; fi
+  # SessionEnd hook removes this session's state file (idempotent: matched by command path)
+  hk=$REPO/adapters/claude-code/session-end.sh
+  if jq -e --arg c "$hk" '[.hooks.SessionEnd[]?.hooks[]?.command]|index($c)' "$S" >/dev/null 2>&1; then say "SessionEnd hook already set"
+  else
+    touch_ "$S"; backup "$S"
+    if (( DRY )); then say "WOULD add SessionEnd hook $hk to settings.json"
+    else out=$(jq --arg c "$hk" '.hooks.SessionEnd += [{"hooks":[{"type":"command","command":$c}]}]' "$S") && cat <<<"$out" > "$S"; say "SessionEnd hook added"; fi
+  fi
+  # legacy single-file state (pre per-session): reader ignores it, the installer removes it
+  old=$HOME/.cache/agent-status/claude-code.json
+  if [[ -e $old ]]; then touch_ "$old"; (( DRY )) && say "WOULD remove legacy $old" || { rm -f "$old"; say "removed legacy $old"; }; fi
 done
 
 echo; echo "== files touched (${#TOUCHED[@]})"; printf '  %s\n' "${TOUCHED[@]}"

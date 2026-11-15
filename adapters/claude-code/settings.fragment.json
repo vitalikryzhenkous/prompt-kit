@@ -1,1 +1,4 @@
-{ "statusLine": { "type": "command", "command": "<REPO>/adapters/claude-code/statusline.sh" } }
+{
+  "statusLine": { "type": "command", "command": "<REPO>/adapters/claude-code/statusline.sh" },
+  "hooks": { "SessionEnd": [ { "hooks": [ { "type": "command", "command": "<REPO>/adapters/claude-code/session-end.sh" } ] } ] }
+}

@@ -3,7 +3,16 @@
 - [x] init: config + preview (789284d)
 - [x] install.sh / doctor.sh / README / Agents.md (883cebb)
 - [x] real install --with claude-code; doctor all PASS; raw.json fields verified (used_percentage, remaining_percentage, context_window_size, model.display_name, workspace.current_dir, session_id)
+## Branch feature/fixes-and-per-cwd
+- [x] п.1 git_status format (fe9f453)
+- [x] п.2 directory glyph: U+F07B уже в формате, правок нет
+- [x] п.3 gauge: claude-code.json обновляется живьём (ts=now), TTL 120; визуально — после рестарта у владельца
+- [x] п.5 Agent per cwd: per-session files, reader scope cwd|any, ttl 300 + kill -0, SessionEnd hook, install.sh (hook + legacy removal), preview 2 sessions × 2 scopes. Tested: adapter pid=claude, child/sibling cwd, dead pid, stale ts, hook delete, adapter cleanup
+- [x] п.4 пилюли: вариант B применён; dir+branch+status в одной пилюле, username в user_bg, pill/user_bg — токены палитры
 ## Queue
+- [x] п.6 theme.sh icon (глифы dir/branch/node/time восстановлены, username = md-robot_excited)
+- [x] guard: bin/check-icons.sh в doctor и preview (+ негативный тест); ловит регрессию 107d977
+- [~] п.6 сегменты + agent.env: код, тесты и ревью opus (8 находок исправлены, 426ada3) готовы; мерж по твоему указанию (agent.env, statusline.env, segments.d, INNER_COMMAND; uptime = segments.d/10-uptime.sh; вывод идентичен)
 - [ ] theme.sh (color|palette|layout|move|agent) + palettes nord, dracula, mono + layouts (split, left, minimal, oneline, rightprompt)
 - [ ] compact_at: implement fields verified; no explicit compact-threshold field in raw.json, so the threshold stays a config value (default 95) — owner to confirm
 - [ ] install.ps1 / doctor.ps1 (Windows native), macOS/zsh — not needed for WSL

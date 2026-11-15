@@ -18,7 +18,7 @@ chk "agent reader linked" "bin/install.sh" test -x ~/.local/bin/prompt-kit-agent
 if grep -qi microsoft /proc/version; then
   chk "Nerd Font on Windows host" "winget install DEVCOM.JetBrainsMonoNerdFont" bash -c "powershell.exe -NoProfile -c \"Get-ChildItem C:\\Windows\\Fonts,\\\$env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts -ErrorAction SilentlyContinue | Where-Object Name -like 'JetBrainsMono*'\" | grep -q ."
 fi
-echo "glyph test:     "
+chk "icon glyph in every module format" "bin/theme.sh icon <module> nf-<name>" "$REPO/bin/check-icons.sh"
 f=$(ls -t ~/.cache/agent-status/*.json 2>/dev/null | grep -v '\.raw\.json$' | head -1 || true)
 if [[ -n $f ]]; then age=$(( $(date +%s) - $(jq -r '.ts' "$f") )); (( age <= 120 )) && echo "PASS  agent state fresh (${age}s)" || { echo "FAIL  agent state stale (${age}s)  → adapter not running / session idle"; bad=1; }
 else echo "FAIL  no agent state file  → start Claude Code with adapter wired"; bad=1; fi
