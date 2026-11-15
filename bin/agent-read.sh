@@ -11,6 +11,7 @@ level=${1:-normal}
 pk_load_env "${PROMPT_KIT_CONFIG:-$HOME/.config/prompt-kit}/agent.env" AGENT_SHOW AGENT_TTL AGENT_SCOPE AGENT_WARN_AT AGENT_ROOT_AT AGENT_COMPACT_AT
 dir=${AGENT_STATUS_DIR:-$HOME/.cache/agent-status}
 show=${AGENT_SHOW:-pct}; ttl=${AGENT_TTL:-300}; warn=${AGENT_WARN_AT:-70}; root=${AGENT_ROOT_AT:-90}; scope=${AGENT_SCOPE:-cwd}; compact=${AGENT_COMPACT_AT:-95}
+for v in ttl warn root compact; do [[ ${!v} =~ ^[0-9]+$ ]] || case $v in ttl) ttl=300;; warn) warn=70;; root) root=90;; compact) compact=95;; esac; done
 here=$(realpath -m "${PWD:-.}")
 shopt -s nullglob
 files=()

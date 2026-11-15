@@ -25,7 +25,7 @@ The adapter prints a status line built from **segments**, configured in `~/.conf
   Native: `model ctx cwd git cost gauge`. `inner` = the one command in `INNER_COMMAND`. `ext` = every executable in
   `~/.config/prompt-kit/segments.d/` (sorted; gets the session JSON on stdin, prints text, 3 s timeout).
   A leading `~` runs the segment but hides its output (keeps a side-effect script running).
-- `SEP=" · "` joins the parts. `INNER_COMMAND=...` is the old wrapper command (kept for one-liners).
+- `SEP=" · "` joins the parts. Values are trimmed at the edges: quote a value that starts or ends with a space (`SEP=" | "`). `INNER_COMMAND=...` is the old wrapper command (kept for one-liners).
 - Migration: an existing `inner-statusline` becomes `INNER_COMMAND` with `SEGMENTS="inner gauge"`, `SEP=" "` (output unchanged; the old file is kept).
   On this machine the uptime-board script is `segments.d/10-uptime.sh` with `SEGMENTS="ext gauge"`.
 - The adapter never fails: no `set -e`, every segment is guarded, it always prints one line.

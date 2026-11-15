@@ -92,6 +92,9 @@ for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
   else
     say "statusLine BEFORE: $(jq -c '.statusLine // null' "$S")"
     touch_ "$S"; backup "$S"
+    if [[ -n $cur ]]; then touch_ "$HOME/.config/prompt-kit/inner-statusline"   # keep the foreign command; migrated into statusline.env below
+      (( DRY )) && say "WOULD save old command to ~/.config/prompt-kit/inner-statusline" \
+        || { mkdir -p "$HOME/.config/prompt-kit"; printf '%s\n' "$cur" > "$HOME/.config/prompt-kit/inner-statusline"; chmod 600 "$HOME/.config/prompt-kit/inner-statusline"; }; fi
     after=$(jq -c --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c | .statusLine' "$S")
     say "statusLine AFTER:  $after"
     if (( ! DRY )); then out=$(jq --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c' "$S") && cat <<<"$out" > "$S"; fi
@@ -116,7 +119,7 @@ ENV
   if [[ ! -e $se ]]; then touch_ "$se"
     if [[ -s $oldin ]]; then   # migration: the old wrapped command becomes INNER_COMMAND, output stays as it was
       (( DRY )) && say "WOULD create $se from $oldin (SEGMENTS=\"inner gauge\", SEP=\" \")" \
-        || { mkdir -p "$cfgd"; printf '# migrated from inner-statusline (output unchanged)\nSEGMENTS="inner gauge"\nSEP=" "\nINNER_COMMAND=%s\n' "$(cat "$oldin")" > "$se"; chmod 600 "$se"; say "migrated $oldin -> $se (old file kept)"; }
+        || { mkdir -p "$cfgd"; printf '# migrated from inner-statusline (output unchanged); the old file is still used, do not delete it\nSEGMENTS="inner gauge"\nSEP=" "\nINNER_COMMAND='"'"'sh %s'"'"'\n' "$oldin" > "$se"; chmod 600 "$se"; say "migrated $oldin -> $se (old file kept)"; }
     else
       (( DRY )) && say "WOULD create $se (default segments)" \
         || { mkdir -p "$cfgd/segments.d"; printf '# segments, in order: model ctx cwd git cost gauge | inner (INNER_COMMAND) | ext (executables in segments.d/) ; ~name = run but hide\nSEGMENTS="model ctx cwd git cost gauge"\nSEP=" · "\n' > "$se"; chmod 600 "$se"; say "created $se"; }
