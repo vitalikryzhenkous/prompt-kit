@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# prompt-kit installer (linux / WSL; bash or zsh hook). Idempotent. Flags: --dry-run --no-font --no-hook --shell bash|zsh --with claude-code
+# prompt-kit installer (linux / WSL / macOS; bash or zsh hook). Idempotent. Flags: --dry-run --no-font --no-hook --shell bash|zsh --with claude-code
 set -euo pipefail
 REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
@@ -19,8 +19,8 @@ TS=$(date +%Y%m%d-%H%M%S); FAILS=(); TOUCHED=()
 say() { echo "• $*"; }
 touch_() { TOUCHED+=("$1"); }
 fail() { FAILS+=("$1"); echo "✗ $1" >&2; }
-declare -A BACKED=()   # one backup per file per run: a second one would overwrite the pre-install original
-backup() { local f=$1; [[ -n ${BACKED[$f]:-} ]] && return 0; BACKED[$f]=1; if [[ -e $f || -L $f ]]; then if (( DRY )); then say "WOULD backup $f -> $f.bak.$TS"; else cp -P "$f" "$f.bak.$TS"; fi; touch_ "$f.bak.$TS"; fi; }
+BACKED=$'\n'   # one backup per file per run: a second one would overwrite the pre-install original (newline list: macOS bash 3.2 has no declare -A)
+backup() { local f=$1; [[ $BACKED == *$'\n'"$f"$'\n'* ]] && return 0; BACKED+="$f"$'\n'; if [[ -e $f || -L $f ]]; then if (( DRY )); then say "WOULD backup $f -> $f.bak.$TS"; else cp -P "$f" "$f.bak.$TS"; fi; touch_ "$f.bak.$TS"; fi; }
 
 # shellcheck disable=SC1091
 . "$REPO/bin/deps.sh"
@@ -33,14 +33,23 @@ for t in $(pk_missing_tools); do
 done
 (( hard == 0 )) || exit 1
 grep -qi microsoft /proc/version 2>/dev/null && WSL=1 || WSL=0
-say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; shell=$KIND; with=${WITH[*]:-none}"
+[[ $(uname -s) == Darwin ]] && MAC=1 || MAC=0
+say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; macOS=$MAC; shell=$KIND; with=${WITH[*]:-none}"
+# brew_get ARGS...  — macOS: `brew install ARGS` (no sudo); a failure is recorded, never aborts the run
+brew_get() {
+  if ! command -v brew >/dev/null 2>&1; then fail "Homebrew not found  → https://brew.sh, then: brew install $*"
+  elif (( DRY )); then say "WOULD run: brew install $*"
+  else brew install "$@" && say "brew install $* done" || fail "brew install $* failed"; fi
+}
 
-# 1. starship (pinned)
+# 1. starship (pinned on Linux x86_64; Homebrew's current formula on macOS)
 have=$(starship --version 2>/dev/null | head -1 | awk '{print $2}' || true)
 if [[ "v$have" == "$STARSHIP_VERSION" ]]; then say "starship $have already installed"
-elif [[ $(uname -s)-$(uname -m) != Linux-x86_64 ]]; then   # the pinned binary is linux x86_64 only
-  if [[ -n $have ]]; then say "starship $have already installed (pinned $STARSHIP_VERSION is Linux x86_64 only; using yours)"
-  else fail "no starship and no pinned binary for $(uname -s)-$(uname -m)  → $(pk_install_hint starship)"; fi
+elif [[ -n $have && $(uname -s)-$(uname -m) != Linux-x86_64 ]]; then   # the pinned binary is linux x86_64 only
+  say "starship $have already installed (pinned $STARSHIP_VERSION is Linux x86_64 only; using yours)"
+elif (( MAC )); then touch_ "brew: starship"; brew_get starship
+elif [[ $(uname -s)-$(uname -m) != Linux-x86_64 ]]; then
+  fail "no starship and no pinned binary for $(uname -s)-$(uname -m)  → $(pk_install_hint starship)"
 else
   touch_ "$HOME/.local/bin/starship"
   if (( DRY )); then say "WOULD download starship $STARSHIP_VERSION (sha256-pinned) -> ~/.local/bin/starship"
@@ -53,6 +62,8 @@ else
     rm -rf "$tmp"
   fi
 fi
+# macOS has no timeout(1): coreutils gives gtimeout, which bounds the statusline segments (bin/compat.sh pk_timeout)
+if (( MAC )) && ! command -v timeout >/dev/null 2>&1 && ! command -v gtimeout >/dev/null 2>&1; then touch_ "brew: coreutils"; brew_get coreutils; fi
 
 # 2. config symlink
 cfg=$HOME/.config/starship.toml; want=$REPO/starship/starship.toml
@@ -110,6 +121,13 @@ if (( FONT && WSL )); then
       else out=$(jq --arg d "$distro" "$expr" "$wt") && pk_put "$wt" <<<"$out" && say "Windows Terminal font set for '$distro'"; fi
     fi
   else echo "⚠ Windows Terminal settings.json not found / not plain JSON: set font 'JetBrainsMono Nerd Font' in UI"; fi
+fi
+# 5b. Nerd Font on macOS (Homebrew cask -> ~/Library/Fonts); the terminal's font setting stays manual
+if (( FONT && MAC )); then
+  if compgen -G "$HOME/Library/Fonts/JetBrainsMonoNerdFont*" >/dev/null || compgen -G "/Library/Fonts/JetBrainsMonoNerdFont*" >/dev/null; then
+    say "JetBrainsMono Nerd Font already installed"
+  else touch_ "brew: --cask font-jetbrains-mono-nerd-font"; brew_get --cask font-jetbrains-mono-nerd-font; fi
+  say "set font 'JetBrainsMono Nerd Font' in your terminal's settings (Terminal.app / iTerm2 / Ghostty / VS Code)"
 fi
 
 # 6. Claude Code adapter (statusLine key only; old command wrapped)
@@ -173,4 +191,4 @@ done
 
 echo; echo "== files touched (${#TOUCHED[@]})"; printf '  %s\n' "${TOUCHED[@]}"
 if (( ${#FAILS[@]} )); then echo "== FAILED: ${#FAILS[@]}" >&2; exit 1; fi
-(( DRY )) && echo "== dry-run only, nothing written" || echo "== done: run 'exec bash' then bin/doctor.sh"
+(( DRY )) && echo "== dry-run only, nothing written" || echo "== done: run 'exec $KIND' then bin/doctor.sh"
