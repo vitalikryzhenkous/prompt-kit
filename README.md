@@ -9,7 +9,7 @@ Starship prompt with an AI-agent context gauge (`◰ 42% ◆ opus`), fed by CLI 
 
 ## Requirements
 - Linux or WSL2 on x86_64 (the pinned starship binary is `x86_64-unknown-linux-musl`), or macOS with Homebrew; bash or zsh (see Supported).
-- Tools: `jq curl tar git python3` and coreutils (`sha256sum`, `timeout`). `bin/doctor.sh` checks them and prints an install hint.
+- Tools: `jq curl tar git python3` and `sha256sum` or `shasum`; `timeout` or `gtimeout` is optional (without it segments run with no time limit). `bin/doctor.sh` checks them and prints an install hint.
 - A Nerd Font in your terminal. The installer adds JetBrainsMono via winget on WSL and via `brew install --cask` on macOS (`--no-font` skips it); elsewhere install it yourself (nerdfonts.com).
 - For the gauge: Claude Code, started at least once (`~/.claude` must exist; the adapter relies on `context_window.used_percentage` in its statusLine JSON,
   compare with `~/.cache/agent-status/claude-code.raw.json` after the first run).
@@ -60,7 +60,7 @@ replaced by `~`, `<user>`, `<host>`, so it is safe to paste into an issue.
 | OS / shell | Status |
 |---|---|
 | WSL / Linux bash | yes |
-| zsh (`install.sh --shell zsh`) | hook block syntax-checked with `zsh -n` where zsh is installed; not run on a real zsh yet |
+| zsh (`install.sh --shell zsh`) | yes: run on a real zsh (macOS, below); the hook block is also checked with `zsh -n` where zsh is installed |
 | macOS zsh (Homebrew) | yes: install + doctor run on macOS 26 arm64 |
 | fish, Windows pwsh | not yet |
 
