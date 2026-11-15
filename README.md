@@ -5,6 +5,7 @@ Starship prompt with an AI-agent context gauge (`◰ 42% ◆ opus`), fed by CLI 
  dir  branch [status] ────── v22 ◰ 42% ◆ opus   14:05   user
 ❯
 ```
+<img width="1215" height="62" alt="image" src="https://github.com/user-attachments/assets/492bf85c-0559-44b7-bc76-3d76222ecf00" />
 
 ## Requirements
 - Linux or WSL2 on x86_64 (the pinned starship binary is `x86_64-unknown-linux-musl`), or macOS with Homebrew; bash or zsh (see Supported).
