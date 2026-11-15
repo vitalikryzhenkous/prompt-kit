@@ -35,3 +35,13 @@ if [[ ${PREVIEW_SCOPES:-1} == 1 ]]; then
   echo "== scope=cwd, in unrelated dir (expect no gauge)";        starship prompt --terminal-width 90 | strip | head -1
   echo "== scope=any, in unrelated dir (expect 2×)";              AGENT_SCOPE=any starship prompt --terminal-width 90 | strip | head -1
 fi
+# icon guard: the config must pass, and a copy with a glyph stripped must FAIL (tests the checker itself)
+echo; echo "== icon check"
+"$here/bin/check-icons.sh" "$cfg"
+neg=/tmp/preview-noicon.toml
+python3 - "$cfg" "$neg" <<'PY'
+import re, sys
+s = open(sys.argv[1], encoding="utf-8").read()
+open(sys.argv[2], "w", encoding="utf-8").write(re.sub(r'(?<=\[ )[^\x00-\x7f]+(?= +\$path)', '', s, count=1))
+PY
+if "$here/bin/check-icons.sh" "$neg" >/dev/null; then echo "FAIL: checker accepted a config without the directory glyph" >&2; exit 1; else echo "negative test ok (stripped glyph detected)"; fi

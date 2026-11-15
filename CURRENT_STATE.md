@@ -11,6 +11,7 @@
 - [x] п.4 пилюли: вариант B применён; dir+branch+status в одной пилюле, username в user_bg, pill/user_bg — токены палитры
 ## Queue
 - [x] п.6 theme.sh icon (глифы dir/branch/node/time восстановлены, username = md-robot_excited)
+- [x] guard: bin/check-icons.sh в doctor и preview (+ негативный тест); ловит регрессию 107d977
 - [~] п.6 сегменты + agent.env: код, тесты и ревью opus (8 находок исправлены, 426ada3) готовы; мерж по твоему указанию (agent.env, statusline.env, segments.d, INNER_COMMAND; uptime = segments.d/10-uptime.sh; вывод идентичен)
 - [ ] theme.sh (color|palette|layout|move|agent) + palettes nord, dracula, mono + layouts (split, left, minimal, oneline, rightprompt)
 - [ ] compact_at: implement fields verified; no explicit compact-threshold field in raw.json, so the threshold stays a config value (default 95) — owner to confirm
