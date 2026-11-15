@@ -15,19 +15,19 @@ an env var of the same name wins; read by the reader and the adapter; `install.s
 - 1 matching session: `◰ 42% ◆ opus`. More: `◆ 2× ◰ 75%` (worst percentage, level by the worst).
 
 ## Cleanup
-SessionEnd hook `adapters/claude-code/session-end.sh` deletes the session's file; the statusline adapter also removes
+SessionEnd hook `adapters/claude-code/session-end.sh` deletes the session's file and, if `segments.d/90-uptime-report.sh` exists, sends the session's final state to the board (`UPTIME_REPORT_MIN_S=0`, from the last saved status JSON); the statusline adapter also removes
 files whose pid is dead (crash / kill -9). `install.sh --with claude-code` adds the hook and removes the legacy `claude-code.json`.
 
 ## Claude Code
 `install.sh --with claude-code` sets the `statusLine` key to `adapters/claude-code/statusline.sh` and adds the SessionEnd hook.
 The adapter prints a status line built from **segments**, configured in `~/.config/prompt-kit/statusline.env`:
-- `SEGMENTS="model ctx cwd git cost gauge"`: ordered tokens, empty output is skipped.
-  Native: `model ctx cwd git cost gauge`. `inner` = the one command in `INNER_COMMAND`. `ext` = every executable in
+- `STATUSLINE_SEGMENTS="model cwd git ctx"` (default; `cost`, `ext`, `inner` are opt-in) in `agent.env` (legacy: `SEGMENTS` in `statusline.env`): ordered tokens, empty output is skipped.
+  Native: `model cwd git ctx cost` (`ctx` = `◰ N%`, `gauge` is an alias). `inner` = the one command in `INNER_COMMAND`. `ext` = every executable in
   `~/.config/prompt-kit/segments.d/` (sorted; gets the session JSON on stdin, prints text, 3 s timeout).
   A leading `~` runs the segment but hides its output (keeps a side-effect script running).
 - `SEP=" · "` joins the parts. Values are trimmed at the edges: quote a value that starts or ends with a space (`SEP=" | "`). `INNER_COMMAND=...` is the old wrapper command (kept for one-liners).
 - Migration: an existing `inner-statusline` becomes `INNER_COMMAND` with `SEGMENTS="inner gauge"`, `SEP=" "` (output unchanged; the old file is kept).
-  On this machine the uptime-board script is `segments.d/10-uptime.sh` with `SEGMENTS="ext gauge"`.
+  On this machine uptime-board is not in the line any more: `segments.d/20-limits.sh` prints the plan limits (`5h 62% ↻17:40`, `week 71%` from 70%), `segments.d/90-uptime-report.sh` keeps reporting Status events to the board and prints nothing (delete it to stop). `statusline.py` writes only when model/ctx/limits changed; the wrapper adds one run per session per 30 s (`UPTIME_REPORT_MIN_S`) and runs in the background, so an unreachable board cannot delay the line. Tradeoff: the last change inside the 30 s window is reported on the next refresh after it.
 - The adapter never fails: no `set -e`, every segment is guarded, it always prints one line.
 `pid` is the nearest ancestor process named `claude`. First run dumps the stdin JSON to `~/.cache/agent-status/claude-code.raw.json`
 to verify field names on your version. Remove: restore `settings.json.bak.*`.
