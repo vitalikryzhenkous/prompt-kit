@@ -114,8 +114,8 @@ AGENT_WARN_AT=70
 AGENT_ROOT_AT=90
 # Claude Code's JSON has no compact threshold field: this is a configured value
 AGENT_COMPACT_AT=95
-# statusline segments, in order: model cwd git ctx cost | ext (executables in segments.d/) | inner. Native ctx = ◰ N%
-STATUSLINE_SEGMENTS="model cwd git ctx cost ext"
+# statusline segments, in order (opt-in: cost, ext, inner): model cwd git ctx cost | ext (executables in segments.d/) | inner. Native ctx = ◰ N%
+STATUSLINE_SEGMENTS="model cwd git ctx"
 ENV
       chmod 600 "$ae"; say "created $ae"; }; fi
   if [[ ! -e $se ]]; then touch_ "$se"

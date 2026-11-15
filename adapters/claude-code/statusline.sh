@@ -62,7 +62,7 @@ seg() {
   esac
 }
 t0=$SECONDS; parts=()
-for tok in ${STATUSLINE_SEGMENTS:-${SEGMENTS:-model cwd git ctx cost ext}}; do
+for tok in ${STATUSLINE_SEGMENTS:-${SEGMENTS:-model cwd git ctx}}; do
   hide=0; [[ $tok == '~'* ]] && { hide=1; tok=${tok#\~}; }
   o=$(seg "$tok" 2>/dev/null || true); o=${o//$'\n'/ }
   (( hide )) || [[ -z $o ]] || parts+=("$o")
