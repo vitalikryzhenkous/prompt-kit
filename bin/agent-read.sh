@@ -21,7 +21,8 @@ while IFS=$'\t' read -r ts pid cwd pct left model; do
   kill -0 "$pid" 2>/dev/null || continue
   if [[ $scope == cwd ]]; then
     c=$(realpath -m "$cwd")
-    [[ $here == "$c" || $here == "$c"/* || $c == "$here"/* || $c == / || $here == / ]] || continue
+    [[ $c != / ]] || continue   # a session started in / would match every shell
+    [[ $here == "$c" || $here == "$c"/* || $c == "$here"/* ]] || continue
   fi
   n=$((n+1))
   if (( pct > worst )); then worst=$pct; wleft=$left; wmodel=$model; fi
