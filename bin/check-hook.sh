@@ -3,7 +3,9 @@
 # A shell that is not installed is reported as SKIP, never as PASS.
 set -uo pipefail
 here=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+# explicit template: BSD mktemp -d ignores TMPDIR without one; no -e here, so a failed mktemp must stop us (else writes go to /bash.rc)
+tmp=$(mktemp -d "${TMPDIR:-/tmp}/pk-hook.XXXXXX") || { echo "FAIL  hook check: cannot create a temp dir in ${TMPDIR:-/tmp}"; exit 1; }
+trap 'rm -rf "$tmp"' EXIT
 rc=0
 for sh in bash zsh; do
   if ! command -v "$sh" >/dev/null 2>&1; then echo "SKIP  $sh hook: $sh not installed (not verified)"; continue; fi

@@ -6,6 +6,7 @@
 - macOS install: `install.sh` gets starship, coreutils (`gtimeout`) and JetBrainsMono Nerd Font from Homebrew; runs on the system bash 3.2 (no `declare -A`); final hint is `exec <shell>`.
 - macOS: the statusline finds Claude Code's pid via a `ps -o ppid=` chain (`pk_ppid`/`pk_comm` in `bin/compat.sh`) where there is no `/proc`.
 - macOS-friendly helpers in `bin/compat.sh`: `shasum -a 256`, `gtimeout`/no timeout, bash `realpath -m`; starship binary download stays Linux x86_64 only.
+- `bin/check-hook.sh`: temp dir from an explicit `$TMPDIR` template (BSD `mktemp -d` ignores `TMPDIR` without one); a failed `mktemp` is a FAIL line + exit 1 instead of writing `/bash.rc`.
 
 ## Roadmap (not implemented)
 - `bin/theme.sh`: `color|palette|layout|move|agent` subcommands, palettes (nord, dracula, mono), layouts (split, left, minimal, oneline, rightprompt). Today only `theme.sh icon` exists.
