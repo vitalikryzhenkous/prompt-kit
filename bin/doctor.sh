@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PASS/FAIL checks with a fix hint each. Read-only.
 set -uo pipefail
-REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$REPO/bin/versions.env"
 bad=0

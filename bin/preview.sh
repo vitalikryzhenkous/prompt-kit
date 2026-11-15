@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Render the prompt in a throwaway repo with a fake 42% agent state. Writes only to /tmp.
 set -euo pipefail
-here=$(cd "$(dirname "$0")/.." && pwd)
+here=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$here/bin/versions.env"
 cfg=${1:-$here/starship/starship.toml}

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # prompt-kit installer (linux / WSL, bash). Idempotent. Flags: --dry-run --no-font --no-hook --with claude-code
 set -euo pipefail
-REPO=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$REPO/bin/versions.env"
+# PROMPT_KIT_DIR (default $XDG_DATA_HOME/prompt-kit) is where the README clones to; the repo is always found from this script's location
+want=${PROMPT_KIT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/prompt-kit}
+[[ -d $want && $(cd "$want" && pwd -P) == "$(cd "$REPO" && pwd -P)" ]] || echo "• note: installing from $REPO (PROMPT_KIT_DIR default would be $want); symlinks and settings will point here" >&2
 DRY=0; FONT=1; HOOK=1; WITH=()
 while (( $# )); do case $1 in
   --dry-run) DRY=1;; --no-font) FONT=0;; --no-hook) HOOK=0;;
