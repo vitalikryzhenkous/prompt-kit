@@ -1,5 +1,5 @@
 # Sourced helper: required external tools and how to install them on this system.
-PK_TOOLS="jq git curl tar sha256sum python3 timeout"
+PK_TOOLS="jq git curl tar python3"   # + sha256sum|shasum, and timeout|gtimeout (optional): see pk_missing_tools
 pk_install_hint() {   # $1 = tool; prints a package-manager command (never runs it)
   local pkg=$1
   case $1 in sha256sum|timeout) pkg=coreutils;; esac
@@ -11,7 +11,11 @@ pk_install_hint() {   # $1 = tool; prints a package-manager command (never runs 
     case $1 in sha256sum|timeout) echo "brew install coreutils (then use gsha256sum/gtimeout, or put coreutils gnubin on PATH)";; *) echo "brew install $pkg";; esac
   else echo "install '$pkg' with your package manager"; fi
 }
-pk_missing_tools() { local t; for t in $PK_TOOLS; do command -v "$t" >/dev/null 2>&1 || echo "$t"; done; }
+pk_missing_tools() {
+  local t; for t in $PK_TOOLS; do command -v "$t" >/dev/null 2>&1 || echo "$t"; done
+  command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1 || echo sha256sum
+  command -v timeout >/dev/null 2>&1 || command -v gtimeout >/dev/null 2>&1 || echo timeout
+}
 
 # pk_put FILE  — writes stdin to FILE via a temp file in the same dir, then `cat > FILE` (keeps symlinks and permissions)
 pk_put() { local f=$1 t; t=$(mktemp "$f.pk.XXXXXX") || return 1; cat > "$t" && cat "$t" > "$f"; local r=$?; rm -f "$t"; return $r; }

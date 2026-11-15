@@ -17,7 +17,7 @@ Starship prompt with an AI-agent context gauge (`◰ 42% ◆ opus`), fed by CLI 
 ```
 # where the clone lives: PROMPT_KIT_DIR, default $XDG_DATA_HOME/prompt-kit (~/.local/share/prompt-kit)
 PROMPT_KIT_DIR=${PROMPT_KIT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/prompt-kit}
-git clone <your-remote>/prompt-kit "$PROMPT_KIT_DIR" && cd "$PROMPT_KIT_DIR"
+git clone https://github.com/vitalikryzhenkous/prompt-kit "$PROMPT_KIT_DIR" && cd "$PROMPT_KIT_DIR"
 bin/install.sh --dry-run --with claude-code   # list every file it would touch
 bin/install.sh --with claude-code
 exec bash                                     # reload the shell, then:

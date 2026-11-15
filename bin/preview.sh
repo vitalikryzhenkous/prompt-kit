@@ -4,6 +4,8 @@ set -euo pipefail
 here=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$here/bin/versions.env"
+# shellcheck disable=SC1091
+. "$here/bin/compat.sh"
 cfg=${1:-$here/starship/starship.toml}
 bindir=/tmp/starship-bin
 if [[ -x $bindir/starship ]]; then :; elif command -v starship >/dev/null; then bindir=$(dirname "$(command -v starship)")
@@ -11,7 +13,7 @@ else
   mkdir -p /tmp/starship-dl "$bindir"
   url=https://github.com/starship/starship/releases/download/$STARSHIP_VERSION/starship-x86_64-unknown-linux-musl.tar.gz
   curl -fsSL "$url" -o /tmp/starship-dl/s.tgz
-  echo "$STARSHIP_SHA256_linux_x86_64_musl  /tmp/starship-dl/s.tgz" | sha256sum -c - >&2
+  echo "$STARSHIP_SHA256_linux_x86_64_musl  /tmp/starship-dl/s.tgz" | pk_sha256_check >&2
   tar -xzf /tmp/starship-dl/s.tgz -C "$bindir" starship
 fi
 repo=/tmp/preview-repo; rm -rf "$repo"; mkdir -p "$repo"; cd "$repo"

@@ -7,12 +7,14 @@
 set -euo pipefail
 level=${1:-normal}
 # shellcheck disable=SC1091
-. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/env-load.sh"
+_d=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+. "$_d/env-load.sh"
+. "$_d/compat.sh"
 pk_load_env "${PROMPT_KIT_CONFIG:-$HOME/.config/prompt-kit}/agent.env" AGENT_SHOW AGENT_TTL AGENT_SCOPE AGENT_WARN_AT AGENT_ROOT_AT AGENT_COMPACT_AT
 dir=${AGENT_STATUS_DIR:-$HOME/.cache/agent-status}
 show=${AGENT_SHOW:-pct}; ttl=${AGENT_TTL:-300}; warn=${AGENT_WARN_AT:-70}; root=${AGENT_ROOT_AT:-90}; scope=${AGENT_SCOPE:-cwd}; compact=${AGENT_COMPACT_AT:-95}
 for v in ttl warn root compact; do [[ ${!v} =~ ^[0-9]+$ ]] || case $v in ttl) ttl=300;; warn) warn=70;; root) root=90;; compact) compact=95;; esac; done
-here=$(realpath -m "${PWD:-.}")
+here=$(pk_realpath "${PWD:-.}")
 shopt -s nullglob
 files=()
 for f in "$dir"/*.*.json; do   # old <provider>.json has no <session> part: ignored; so is *.raw.json
@@ -25,7 +27,7 @@ while IFS=$'\t' read -r ts pid cwd pct left model; do
   (( now - ts <= ttl )) || continue
   kill -0 "$pid" 2>/dev/null || continue
   if [[ $scope == cwd ]]; then
-    c=$(realpath -m "$cwd")
+    c=$(pk_realpath "$cwd")
     [[ $c != / ]] || continue   # a session started in / would match every shell
     [[ $here == "$c" || $here == "$c"/* || $c == "$here"/* ]] || continue
   fi

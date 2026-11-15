@@ -20,8 +20,10 @@ export PATH="$HOME/.local/bin:$PATH"
 # shellcheck disable=SC1091
 . "$REPO/bin/deps.sh"
 for t in $PK_TOOLS; do chk "tool: $t" "$(pk_install_hint "$t")" command -v "$t"; done
+chk "tool: sha256sum or shasum" "$(pk_install_hint sha256sum)" bash -c 'command -v sha256sum || command -v shasum'
+chk "tool: timeout or gtimeout" "$(pk_install_hint timeout)" bash -c 'command -v timeout || command -v gtimeout' 
 chk "starship on PATH" "bin/install.sh" command -v starship
-chk "starship version = $STARSHIP_VERSION" "bin/install.sh" bash -c "[[ v\$(starship --version | head -1 | awk '{print \$2}') == $STARSHIP_VERSION ]]"
+[[ $(uname -s)-$(uname -m) == Linux-x86_64 ]] && chk "starship version = $STARSHIP_VERSION" "bin/install.sh" bash -c "[[ v\$(starship --version | head -1 | awk '{print \$2}') == $STARSHIP_VERSION ]]"
 chk "config symlink -> repo" "bin/install.sh" bash -c "[[ \$(readlink ~/.config/starship.toml) == '$REPO/starship/starship.toml' ]]"
 chk "config renders (STARSHIP_CONFIG parse)" "fix TOML" bash -c "starship prompt >/dev/null"
 found=0

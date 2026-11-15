@@ -8,6 +8,8 @@ here=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 cfgdir=${PROMPT_KIT_CONFIG:-$HOME/.config/prompt-kit}
 # shellcheck disable=SC1091
 . "$here/../../bin/env-load.sh"
+# shellcheck disable=SC1091
+. "$here/../../bin/compat.sh"
 pk_load_env "$cfgdir/statusline.env" SEGMENTS SEP INNER_COMMAND
 pk_load_env "$cfgdir/agent.env" AGENT_COMPACT_AT STATUSLINE_SEGMENTS
 [[ ${AGENT_COMPACT_AT:-95} =~ ^[0-9]+$ ]] || AGENT_COMPACT_AT=95
@@ -47,14 +49,14 @@ fi
 # a leading ~ runs the segment but hides its output (e.g. ~ext keeps a side-effect script running).
 j() { printf '%s' "$in" | jq -r "$1" 2>/dev/null || true; }
 cur=$(j '.workspace.current_dir // .cwd // empty')
-run_cmd() { printf '%s' "$in" | timeout -k 1 3 sh -c "$1" 2>/dev/null || true; }   # INNER_COMMAND: a shell command line
-run_exec() { printf '%s' "$in" | timeout -k 1 3 "$1" 2>/dev/null || true; }       # segments.d file: run directly, no shell parsing
+run_cmd() { printf '%s' "$in" | pk_timeout -k 1 3 sh -c "$1" 2>/dev/null || true; }   # INNER_COMMAND: a shell command line
+run_exec() { printf '%s' "$in" | pk_timeout -k 1 3 "$1" 2>/dev/null || true; }       # segments.d file: run directly, no shell parsing
 seg() {
   case $1 in
     model) j '.model.display_name // empty' ;;
     cwd) if [[ -n $cur ]]; then t=$cur; [[ $t == "$HOME" || $t == "$HOME"/* ]] && t="~${t#"$HOME"}"; printf '%s' "$t"; fi ;;
-    git) [[ -n $cur ]] && { b=$(timeout 1 git -C "$cur" branch --show-current 2>/dev/null || true)
-           [[ -n $b ]] && { [[ -n $(timeout 1 git -C "$cur" --no-optional-locks status --porcelain -uno 2>/dev/null | head -1) ]] && b+='*'; printf '\xee\x82\xa0 %s' "$b"; }; } ;;
+    git) [[ -n $cur ]] && { b=$(pk_timeout 1 git -C "$cur" branch --show-current 2>/dev/null || true)
+           [[ -n $b ]] && { [[ -n $(pk_timeout 1 git -C "$cur" --no-optional-locks status --porcelain -uno 2>/dev/null | head -1) ]] && b+='*'; printf '\xee\x82\xa0 %s' "$b"; }; } ;;
     cost) c=$(j '.cost.total_cost_usd // empty'); [[ -n $c ]] && LC_ALL=C printf '$%.2f' "$c" ;;
     ctx|gauge) p=$(j '.context_window.used_percentage // empty | round'); [[ -n $p ]] && printf '◰ %s%%' "$p" ;;
     inner) [[ -n ${INNER_COMMAND:-} ]] && run_cmd "$INNER_COMMAND" ;;
