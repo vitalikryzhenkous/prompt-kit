@@ -18,7 +18,14 @@ touch_() { TOUCHED+=("$1"); }
 fail() { FAILS+=("$1"); echo "✗ $1" >&2; }
 backup() { local f=$1; if [[ -e $f || -L $f ]]; then if (( DRY )); then say "WOULD backup $f -> $f.bak.$TS"; else cp -P "$f" "$f.bak.$TS"; fi; touch_ "$f.bak.$TS"; fi; }
 
-for t in jq curl tar sha256sum; do command -v "$t" >/dev/null || { echo "missing: $t" >&2; exit 1; }; done
+# shellcheck disable=SC1091
+. "$REPO/bin/deps.sh"
+hard=0
+for t in $(pk_missing_tools); do
+  case $t in jq|curl|tar|sha256sum) echo "missing (required): $t  → $(pk_install_hint "$t")" >&2; hard=1;;
+             *) echo "⚠ missing (some features): $t  → $(pk_install_hint "$t")" >&2;; esac
+done
+(( hard == 0 )) || exit 1
 grep -qi microsoft /proc/version 2>/dev/null && WSL=1 || WSL=0
 say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; shell=bash; with=${WITH[*]:-none}"
 

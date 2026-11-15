@@ -7,6 +7,9 @@ REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 bad=0
 chk() { local name=$1 fix=$2; shift 2; if "$@" >/dev/null 2>&1; then echo "PASS  $name"; else echo "FAIL  $name  → $fix"; bad=1; fi; }
 export PATH="$HOME/.local/bin:$PATH"
+# shellcheck disable=SC1091
+. "$REPO/bin/deps.sh"
+for t in $PK_TOOLS; do chk "tool: $t" "$(pk_install_hint "$t")" command -v "$t"; done
 chk "starship on PATH" "bin/install.sh" command -v starship
 chk "starship version = $STARSHIP_VERSION" "bin/install.sh" bash -c "[[ v\$(starship --version | head -1 | awk '{print \$2}') == $STARSHIP_VERSION ]]"
 chk "config symlink -> repo" "bin/install.sh" bash -c "[[ \$(readlink ~/.config/starship.toml) == '$REPO/starship/starship.toml' ]]"
