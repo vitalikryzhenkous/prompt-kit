@@ -34,3 +34,9 @@ to verify field names on your version. Remove: restore `settings.json.bak.*`.
 
 ## Other providers
 Add an adapter only if the CLI exposes a hook/status event. Codex / Gemini / OpenCode / Cursor: not checked yet.
+
+## Icons
+`bin/theme.sh icon <directory|git_branch|nodejs|time|username> <glyph | nf-<set>-<name> | U+XXXX>` rewrites the icon in that module's
+`format` in `starship/starship.toml`. `nf-` names resolve through Nerd Fonts `glyphnames.json` (version and sha256 pinned in
+`bin/versions.env`, cached in `~/.cache/prompt-kit/`). Note: the name is authoritative, a U+ code is not checked against it
+(e.g. `nf-md-robot_excited` is U+F16A3, while U+F069D is `nf-md-folder_star`).

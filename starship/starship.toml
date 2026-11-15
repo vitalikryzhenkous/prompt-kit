@@ -22,12 +22,12 @@ symbol = "─"
 style = "fg:user"
 
 [directory]
-format = "[](fg:pill)[  $path ]($style)"
+format = "[](fg:pill)[  $path ]($style)"
 style = "bold fg:dir bg:pill"
 truncation_length = 3
 
 [git_branch]
-format = "[ $branch ]($style)"
+format = "[  $branch ]($style)"
 style = "fg:branch bg:pill"
 
 [git_status]
@@ -35,18 +35,18 @@ format = "([$all_status$ahead_behind ]($style))[](fg:pill) "
 style = "fg:branch bg:pill"
 
 [nodejs]
-format = "[](fg:pill)[  $version ]($style)[](fg:pill) "
+format = "[](fg:pill)[  $version ]($style)[](fg:pill) "
 style = "fg:node bg:pill"
 
 [time]
 disabled = false
-format = "[](fg:pill)[  $time ]($style)[](fg:pill) "
+format = "[](fg:pill)[  $time ]($style)[](fg:pill) "
 time_format = "%H:%M"
 style = "fg:time bg:pill"
 
 [username]
 show_always = true
-format = "[](fg:user_bg)[ $user ]($style)[](fg:user_bg)"
+format = "[](fg:user_bg)[ 󱚣 $user ]($style)[](fg:user_bg)"
 style_user = "fg:time bg:user_bg"
 style_root = "fg:root bg:user_bg"
 
