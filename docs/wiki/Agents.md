@@ -15,7 +15,7 @@ an env var of the same name wins; read by the reader and the adapter; `install.s
 - 1 matching session: `◰ 42% ◆ opus`. More: `◆ 2× ◰ 75%` (worst percentage, level by the worst).
 
 ## Cleanup
-SessionEnd hook `adapters/claude-code/session-end.sh` deletes the session's file; the statusline adapter also removes
+SessionEnd hook `adapters/claude-code/session-end.sh` deletes the session's file and, if `segments.d/90-uptime-report.sh` exists, sends the session's final state to the board (`UPTIME_REPORT_MIN_S=0`, from the last saved status JSON); the statusline adapter also removes
 files whose pid is dead (crash / kill -9). `install.sh --with claude-code` adds the hook and removes the legacy `claude-code.json`.
 
 ## Claude Code
