@@ -37,7 +37,7 @@ the separator and the wrapped command (`SEP`, `INNER_COMMAND`) are in `~/.config
 - `SEP=" · "` joins the parts. Values are trimmed at the edges: quote a value that starts or ends with a space (`SEP=" | "`). `INNER_COMMAND=...` is the old wrapper command (kept for one-liners).
 - Migration: an existing `inner-statusline` becomes `INNER_COMMAND` with `SEGMENTS="inner gauge"`, `SEP=" "` (output unchanged; the old file is kept).
 - The adapter never fails: no `set -e`, every segment is guarded, it always prints one line.
-`pid` is the nearest ancestor process named `claude`. First run dumps the stdin JSON to `~/.cache/agent-status/claude-code.raw.json`
+`pid` is the nearest ancestor process named `claude` (Linux: `/proc/<pid>/comm`; macOS: `ps -o ppid=` chain, name = basename of argv[0]; fallback: the parent pid). First run dumps the stdin JSON to `~/.cache/agent-status/claude-code.raw.json`
 to verify field names on your version. Remove: `bin/uninstall.sh` (takes out only our `statusLine` and `SessionEnd` entries; see README).
 
 ## Other providers

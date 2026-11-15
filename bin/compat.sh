@@ -15,6 +15,17 @@ pk_timeout() {
     "$@"
   fi
 }
+# pk_ppid PID  — parent pid: /proc on Linux, `ps -o ppid=` on macOS/BSD (no /proc)
+pk_ppid() {
+  if [[ -r /proc/$1/stat ]]; then awk '{print $4}' "/proc/$1/stat"
+  else local p; p=$(ps -o ppid= -p "$1" 2>/dev/null) || return 1; printf '%s\n' "${p//[[:space:]]/}"; fi
+}
+# pk_comm PID  — process name: /proc/PID/comm on Linux; on macOS the basename of argv[0] (`ps -o args=`), because
+# `ps -o comm=` there is the executable path, which for a native Claude Code install is a version-named file, not "claude"
+pk_comm() {
+  if [[ -r /proc/$1/comm ]]; then cat "/proc/$1/comm"
+  else local a; a=$(ps -o args= -p "$1" 2>/dev/null) || return 1; a=${a%% *}; printf '%s\n' "${a##*/}"; fi
+}
 # pk_realpath PATH  — absolute, normalized path; does not need to exist (like `realpath -m`)
 pk_realpath() {
   local p=$1 d out=() seg

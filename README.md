@@ -7,9 +7,9 @@ Starship prompt with an AI-agent context gauge (`◰ 42% ◆ opus`), fed by CLI 
 ```
 
 ## Requirements
-- Linux or WSL2 on x86_64 (the pinned starship binary is `x86_64-unknown-linux-musl`); bash (zsh: see Supported).
+- Linux or WSL2 on x86_64 (the pinned starship binary is `x86_64-unknown-linux-musl`), or macOS with Homebrew; bash or zsh (see Supported).
 - Tools: `jq curl tar git python3` and coreutils (`sha256sum`, `timeout`). `bin/doctor.sh` checks them and prints an install hint.
-- A Nerd Font in your terminal. On WSL the installer can add JetBrainsMono via winget (`--no-font` skips it); elsewhere install it yourself (nerdfonts.com).
+- A Nerd Font in your terminal. The installer adds JetBrainsMono via winget on WSL and via `brew install --cask` on macOS (`--no-font` skips it); elsewhere install it yourself (nerdfonts.com).
 - For the gauge: Claude Code, started at least once (`~/.claude` must exist; the adapter relies on `context_window.used_percentage` in its statusLine JSON,
   compare with `~/.cache/agent-status/claude-code.raw.json` after the first run).
 
@@ -23,6 +23,9 @@ bin/install.sh --with claude-code
 exec bash                                     # reload the shell, then:
 bin/doctor.sh                                 # run from the clone directory
 ```
+macOS (zsh): same steps with `bin/install.sh --shell zsh --with claude-code` and `exec zsh`; starship, coreutils (`gtimeout`) and the font come from Homebrew.
+The system `/bin/bash` 3.2 is enough to run the scripts.
+
 Preview without installing: `bin/preview.sh` (writes only to `/tmp`).
 
 ## What install changes
@@ -31,12 +34,14 @@ Real run, in order. Each config file that already exists is first copied to `<fi
 
 | What | Where | Backup |
 |---|---|---|
-| starship binary (pinned version, sha256-checked) | `~/.local/bin/starship` | – |
+| starship binary (pinned version, sha256-checked); macOS: `brew install starship` | `~/.local/bin/starship` (macOS: Homebrew prefix) | – |
+| macOS only, if no `timeout`/`gtimeout`: `brew install coreutils` | Homebrew prefix | – |
 | prompt config (symlink to the repo) | `~/.config/starship.toml` | yes |
 | gauge reader (symlink) | `~/.local/bin/prompt-kit-agent-read` | – |
-| shell hook (one `# prompt-kit` block at the end) | `~/.bashrc` | yes |
+| shell hook (one `# prompt-kit` block at the end) | `~/.bashrc` or `~/.zshrc` | yes |
 | state dir | `~/.cache/agent-status/` (0700) | – |
 | Nerd Font + font in the Windows Terminal profile of this distro (WSL only; skip with `--no-font`) | Windows host | `settings.json` |
+| Nerd Font, `brew install --cask font-jetbrains-mono-nerd-font` (macOS only; skip with `--no-font`) | `~/Library/Fonts` | – |
 | with `--with claude-code`: `statusLine` + `SessionEnd` hook | `~/.claude/settings.json` | yes |
 | with `--with claude-code`: default config, never overwritten | `~/.config/prompt-kit/agent.env`, `statusline.env` | – |
 
@@ -55,7 +60,8 @@ replaced by `~`, `<user>`, `<host>`, so it is safe to paste into an issue.
 |---|---|
 | WSL / Linux bash | yes |
 | zsh (`install.sh --shell zsh`) | hook block syntax-checked with `zsh -n` where zsh is installed; not run on a real zsh yet |
-| macOS, fish, Windows pwsh | not yet |
+| macOS zsh (Homebrew) | yes: install + doctor run on macOS 26 arm64 |
+| fish, Windows pwsh | not yet |
 
 | Agent | Status |
 |---|---|

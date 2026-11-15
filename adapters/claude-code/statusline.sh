@@ -17,8 +17,8 @@ dir=${AGENT_STATUS_DIR:-$HOME/.cache/agent-status}
 mkdir -p "$dir"; chmod 700 "$dir"
 # Claude Code's own pid: nearest ancestor named claude (fallback: parent). Used by the reader for liveness.
 pid=$PPID; q=$$
-for _ in 1 2 3 4 5 6; do q=$(awk '{print $4}' "/proc/$q/stat" 2>/dev/null) || break; [[ $q =~ ^[0-9]+$ && $q -gt 1 ]] || break
-  [[ $(cat "/proc/$q/comm" 2>/dev/null) == claude* ]] && { pid=$q; break; }; done
+for _ in 1 2 3 4 5 6; do q=$(pk_ppid "$q" 2>/dev/null) || break; [[ $q =~ ^[0-9]+$ && $q -gt 1 ]] || break
+  [[ $(pk_comm "$q" 2>/dev/null) == claude* ]] && { pid=$q; break; }; done
 sid=$(printf '%s' "$in" | jq -r '.session_id // empty' 2>/dev/null | tr -cd 'A-Za-z0-9_-' | cut -c1-40)
 # drop state files of dead sessions (only <provider>.<session>.json, never raw)
 for f in "$dir"/claude-code.*.json; do [[ $f == *.raw.json ]] && continue
