@@ -15,7 +15,7 @@ chk "hook exactly once" "remove duplicate '# prompt-kit' in ~/.bashrc" bash -c "
 chk "hook is last in .bashrc" "move block to end of ~/.bashrc" bash -c "tail -n 1 ~/.bashrc | grep -q 'starship init bash'"
 if grep -nE 'oh-my-posh|p10k|powerlevel' ~/.bashrc >/dev/null 2>&1; then echo "FAIL  no p10k/oh-my-posh in .bashrc  → disable it"; bad=1; else echo "PASS  no p10k/oh-my-posh in .bashrc"; fi
 chk "agent reader linked" "bin/install.sh" test -x ~/.local/bin/prompt-kit-agent-read
-if grep -qi microsoft /proc/version; then
+if grep -qi microsoft /proc/version 2>/dev/null && command -v powershell.exe >/dev/null 2>&1; then
   chk "Nerd Font on Windows host" "winget install DEVCOM.JetBrainsMonoNerdFont" bash -c "powershell.exe -NoProfile -c \"Get-ChildItem C:\\Windows\\Fonts,\\\$env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts -ErrorAction SilentlyContinue | Where-Object Name -like 'JetBrainsMono*'\" | grep -q ."
 fi
 chk "icon glyph in every module format" "bin/theme.sh icon <module> nf-<name>" "$REPO/bin/check-icons.sh"

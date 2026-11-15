@@ -79,11 +79,18 @@ if (( FONT && WSL )); then
          && say "font installed/present" || echo "⚠ winget failed or font already installed; manual: https://www.nerdfonts.com/font-downloads (JetBrainsMono)"; fi
   else echo "⚠ powershell.exe not reachable: install JetBrainsMono Nerd Font manually"; fi
   wt=$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminal*/LocalState/settings.json 2>/dev/null | head -1 || true)
+  distro=${WSL_DISTRO_NAME:-}
+  # profile = the Windows Terminal WSL profile whose name is this distro's name (exact match, not "Ubuntu" guesses)
+  sel='.profiles.list[]? | select(.source=="Windows.Terminal.Wsl" and .name==$d)'
   if [[ -n $wt ]] && jq -e . "$wt" >/dev/null 2>&1; then
-    touch_ "$wt"; backup "$wt"
-    expr='(.profiles.list[] | select(.source=="Windows.Terminal.Wsl" or ((.name//"")|test("Ubuntu"))) | .font.face) = "JetBrainsMono Nerd Font"'
-    if (( DRY )); then say "WOULD set WSL profile font.face in Windows Terminal settings.json"
-    else out=$(jq "$expr" "$wt") && cat <<<"$out" > "$wt" && say "Windows Terminal font set"; fi
+    if [[ -z $distro ]]; then echo "⚠ WSL_DISTRO_NAME is empty: set the font in the Windows Terminal UI"
+    elif [[ $(jq --arg d "$distro" "[$sel]|length" "$wt") != 1 ]]; then echo "⚠ no single Windows Terminal profile named '$distro': set font 'JetBrainsMono Nerd Font' in its UI"
+    else
+      touch_ "$wt"; backup "$wt"
+      expr="($sel | .font.face) = \"JetBrainsMono Nerd Font\""
+      if (( DRY )); then say "WOULD set font.face of the '$distro' profile in Windows Terminal settings.json"
+      else out=$(jq --arg d "$distro" "$expr" "$wt") && cat <<<"$out" > "$wt" && say "Windows Terminal font set for '$distro'"; fi
+    fi
   else echo "⚠ Windows Terminal settings.json not found / not plain JSON: set font 'JetBrainsMono Nerd Font' in UI"; fi
 fi
 
