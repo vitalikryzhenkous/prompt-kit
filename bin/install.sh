@@ -16,7 +16,8 @@ TS=$(date +%Y%m%d-%H%M%S); FAILS=(); TOUCHED=()
 say() { echo "• $*"; }
 touch_() { TOUCHED+=("$1"); }
 fail() { FAILS+=("$1"); echo "✗ $1" >&2; }
-backup() { local f=$1; if [[ -e $f || -L $f ]]; then if (( DRY )); then say "WOULD backup $f -> $f.bak.$TS"; else cp -P "$f" "$f.bak.$TS"; fi; touch_ "$f.bak.$TS"; fi; }
+declare -A BACKED=()   # one backup per file per run: a second one would overwrite the pre-install original
+backup() { local f=$1; [[ -n ${BACKED[$f]:-} ]] && return 0; BACKED[$f]=1; if [[ -e $f || -L $f ]]; then if (( DRY )); then say "WOULD backup $f -> $f.bak.$TS"; else cp -P "$f" "$f.bak.$TS"; fi; touch_ "$f.bak.$TS"; fi; }
 
 # shellcheck disable=SC1091
 . "$REPO/bin/deps.sh"
