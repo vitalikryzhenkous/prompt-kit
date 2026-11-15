@@ -4,9 +4,11 @@ set -euo pipefail
 REPO=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$REPO/bin/versions.env"
-# PROMPT_KIT_DIR (default $XDG_DATA_HOME/prompt-kit) is where the README clones to; the repo is always found from this script's location
-want=${PROMPT_KIT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/prompt-kit}
-[[ -d $want && $(cd "$want" && pwd -P) == "$(cd "$REPO" && pwd -P)" ]] || echo "• note: installing from $REPO (PROMPT_KIT_DIR default would be $want); symlinks and settings will point here" >&2
+# PROMPT_KIT_DIR (README clone target, default $XDG_DATA_HOME/prompt-kit) does not move anything: the repo is found from this
+# script's location. If it is set and points elsewhere, say so, because the symlinks/settings will point at the real location.
+if [[ -n ${PROMPT_KIT_DIR:-} && $(cd "$PROMPT_KIT_DIR" 2>/dev/null && pwd -P) != "$(cd "$REPO" && pwd -P)" ]]; then
+  echo "• note: PROMPT_KIT_DIR=$PROMPT_KIT_DIR but installing from $REPO; symlinks and settings will point to $REPO" >&2
+fi
 DRY=0; FONT=1; HOOK=1; WITH=(); KIND=$(basename "${SHELL:-bash}"); [[ $KIND == zsh ]] || KIND=bash
 while (( $# )); do case $1 in
   --dry-run) DRY=1;; --no-font) FONT=0;; --no-hook) HOOK=0;;
@@ -52,7 +54,15 @@ cfg=$HOME/.config/starship.toml; want=$REPO/starship/starship.toml
 if [[ -L $cfg && $(readlink "$cfg") == "$want" ]]; then say "config symlink ok"
 else
   touch_ "$cfg"; backup "$cfg"
-  if (( DRY )); then say "WOULD symlink $cfg -> $want"; else mkdir -p "$HOME/.config"; ln -sfn "$want" "$cfg"; say "linked $cfg"; fi
+  if (( DRY )); then say "WOULD symlink $cfg -> $want"
+  else
+    # manifest: which backup holds the pre-install file (written once; uninstall restores strictly from it)
+    mf=$HOME/.config/prompt-kit/install-manifest; mkdir -p "$HOME/.config/prompt-kit"
+    if ! grep -q '^starship.toml=' "$mf" 2>/dev/null; then
+      if [[ -e $cfg || -L $cfg ]]; then echo "starship.toml=$cfg.bak.$TS" >> "$mf"; else echo "starship.toml=NONE" >> "$mf"; fi
+    fi
+    mkdir -p "$HOME/.config"; ln -sfn "$want" "$cfg"; say "linked $cfg"
+  fi
 fi
 
 # 3. agent reader + state dir
@@ -81,7 +91,7 @@ if (( FONT && WSL )); then
     else powershell.exe -NoProfile -c "winget install --id DEVCOM.JetBrainsMonoNerdFont --accept-package-agreements --accept-source-agreements" >/dev/null 2>&1 \
          && say "font installed/present" || echo "⚠ winget failed or font already installed; manual: https://www.nerdfonts.com/font-downloads (JetBrainsMono)"; fi
   else echo "⚠ powershell.exe not reachable: install JetBrainsMono Nerd Font manually"; fi
-  wt=$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminal*/LocalState/settings.json 2>/dev/null | head -1 || true)
+  wt=$(pk_wt_settings)
   distro=${WSL_DISTRO_NAME:-}
   # profile = the Windows Terminal WSL profile whose name is this distro's name (exact match, not "Ubuntu" guesses)
   sel='.profiles.list[]? | select(.source=="Windows.Terminal.Wsl" and .name==$d)'
@@ -92,7 +102,7 @@ if (( FONT && WSL )); then
       touch_ "$wt"; backup "$wt"
       expr="($sel | .font.face) = \"JetBrainsMono Nerd Font\""
       if (( DRY )); then say "WOULD set font.face of the '$distro' profile in Windows Terminal settings.json"
-      else out=$(jq --arg d "$distro" "$expr" "$wt") && cat <<<"$out" > "$wt" && say "Windows Terminal font set for '$distro'"; fi
+      else out=$(jq --arg d "$distro" "$expr" "$wt") && pk_put "$wt" <<<"$out" && say "Windows Terminal font set for '$distro'"; fi
     fi
   else echo "⚠ Windows Terminal settings.json not found / not plain JSON: set font 'JetBrainsMono Nerd Font' in UI"; fi
 fi
@@ -110,7 +120,7 @@ for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
         || { mkdir -p "$HOME/.config/prompt-kit"; printf '%s\n' "$cur" > "$HOME/.config/prompt-kit/inner-statusline"; chmod 600 "$HOME/.config/prompt-kit/inner-statusline"; }; fi
     after=$(jq -c --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c | .statusLine' "$S")
     say "statusLine AFTER:  $after"
-    if (( ! DRY )); then out=$(jq --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c' "$S") && cat <<<"$out" > "$S"; fi
+    if (( ! DRY )); then out=$(jq --arg c "$ours" '.statusLine.type="command" | .statusLine.command=$c' "$S") && pk_put "$S" <<<"$out"; fi
   fi
   # config: agent.env (gauge parameters) and statusline.env (segments); never overwritten
   cfgd=$HOME/.config/prompt-kit; ae=$cfgd/agent.env; se=$cfgd/statusline.env; oldin=$cfgd/inner-statusline
@@ -145,7 +155,7 @@ ENV
   else
     touch_ "$S"; backup "$S"
     if (( DRY )); then say "WOULD add SessionEnd hook $hk to settings.json"
-    else out=$(jq --arg c "$hk" '.hooks.SessionEnd += [{"hooks":[{"type":"command","command":$c}]}]' "$S") && cat <<<"$out" > "$S"; say "SessionEnd hook added"; fi
+    else out=$(jq --arg c "$hk" '.hooks.SessionEnd += [{"hooks":[{"type":"command","command":$c}]}]' "$S") && pk_put "$S" <<<"$out"; say "SessionEnd hook added"; fi
   fi
   # legacy single-file state (pre per-session): reader ignores it, the installer removes it
   old=$HOME/.cache/agent-status/claude-code.json

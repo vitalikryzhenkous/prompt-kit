@@ -10,10 +10,9 @@ if [[ ${1:-} == --report ]]; then
   { echo "prompt-kit $(git -C "$REPO" describe --tags --always 2>/dev/null || echo unknown)"
     echo "os: $os; kernel: $(uname -r | cut -d. -f1-2); wsl: $(grep -qi microsoft /proc/version 2>/dev/null && echo yes || echo no); shell: $(basename "${SHELL:-?}")"
     echo "tools: jq $(jq --version 2>/dev/null || echo -), git $(git --version 2>/dev/null | awk '{print $3}'), curl $(curl --version 2>/dev/null | awk 'NR==1{print $2}'), python3 $(python3 -V 2>&1 | awk '{print $2}'), starship $(starship --version 2>/dev/null | awk 'NR==1{print $2}')"
-    echo; "$0"; } 2>&1 \
-  | sed -e "s|$HOME|~|g" -e "s|/mnt/c/Users/[^/ ]*|/mnt/c/Users/<user>|g" \
-        -e "s|$(id -un)|<user>|g" -e "s|$(hostname 2>/dev/null || echo __nohost__)|<host>|g"
-  exit 0
+    echo; "$REPO/bin/doctor.sh"; echo "exit=$?"; } 2>&1 \
+  | python3 -I "$REPO/bin/scrub.py" "$HOME" "$(id -un)" "$(hostname 2>/dev/null || true)"
+  exit "${PIPESTATUS[0]}"
 fi
 bad=0
 chk() { local name=$1 fix=$2; shift 2; if "$@" >/dev/null 2>&1; then echo "PASS  $name"; else echo "FAIL  $name  → $fix"; bad=1; fi; }
@@ -30,7 +29,7 @@ for rc in ~/.bashrc ~/.zshrc; do
   [[ -f $rc ]] && grep -q '^# prompt-kit' "$rc" || continue
   found=1; b=$(basename "$rc")
   chk "hook exactly once in $b" "remove the duplicate '# prompt-kit' block in $b" bash -c "[[ \$(grep -c '^# prompt-kit' '$rc') == 1 ]]"
-  chk "hook is last in $b" "move the block to the end of $b" bash -c "tail -n 1 '$rc' | grep -q 'starship init'"
+  chk "hook is last in $b" "move the block to the end of $b" bash -c "grep -v '^[[:space:]]*$' '$rc' | tail -n 1 | grep -q 'starship init'"
   if grep -nE 'oh-my-posh|p10k|powerlevel' "$rc" >/dev/null 2>&1; then echo "FAIL  no p10k/oh-my-posh in $b  → disable it"; bad=1; else echo "PASS  no p10k/oh-my-posh in $b"; fi
 done
 (( found )) || { echo "FAIL  prompt-kit hook not found in ~/.bashrc or ~/.zshrc  → bin/install.sh"; bad=1; }

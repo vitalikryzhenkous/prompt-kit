@@ -18,6 +18,7 @@
 - [x] statusline: сегменты через STATUSLINE_SEGMENTS (agent.env); ctx = ◰ N%; uptime-board убран из строки (limits → segments.d/20-limits.sh, отчёт на board → hidden 90-uptime-report.sh)
 - [x] default STATUSLINE_SEGMENTS="model cwd git ctx" (cost opt-in); 90-uptime-report.sh: троттлинг 30 с + фон (statusline.py уже дедуплицирует по изменению)
 - [x] п.7.1 PROMPT_KIT_DIR; п.7.2 WSL-only + WT профиль по имени дистрибутива; п.7.3 deps+hints; п.7.4 uninstall.sh (roundtrip в fake HOME: bashrc и settings.json идентичны оригиналу); п.7.5 README + doctor --report; п.7.6 zsh: install --shell zsh, bin/hook-block.sh + check-hook.sh (bash -n PASS; zsh -n НЕ запускался: zsh не установлен, а мой запуск zsh блокирует хук)
+- [x] ревью п.7 (opus, 7 находок): исправлены jq в uninstall, sed -i по симлинку, scrub.py вместо sed, manifest бэкапа starship.toml, WT только текущий Windows-пользователь, блок хука сверяется с hook-block.sh
 - [~] п.6 сегменты + agent.env: код, тесты и ревью opus (8 находок исправлены, 426ada3) готовы; мерж по твоему указанию (agent.env, statusline.env, segments.d, INNER_COMMAND; uptime = segments.d/10-uptime.sh; вывод идентичен)
 - [ ] theme.sh (color|palette|layout|move|agent) + palettes nord, dracula, mono + layouts (split, left, minimal, oneline, rightprompt)
 - [ ] compact_at: implement fields verified; no explicit compact-threshold field in raw.json, so the threshold stays a config value (default 95) — owner to confirm

@@ -12,3 +12,18 @@ pk_install_hint() {   # $1 = tool; prints a package-manager command (never runs 
   else echo "install '$pkg' with your package manager"; fi
 }
 pk_missing_tools() { local t; for t in $PK_TOOLS; do command -v "$t" >/dev/null 2>&1 || echo "$t"; done; }
+
+# pk_put FILE  — writes stdin to FILE via a temp file in the same dir, then `cat > FILE` (keeps symlinks and permissions)
+pk_put() { local f=$1 t; t=$(mktemp "$f.pk.XXXXXX") || return 1; cat > "$t" && cat "$t" > "$f"; local r=$?; rm -f "$t"; return $r; }
+
+# pk_wt_settings — path of the Windows Terminal settings.json of the CURRENT Windows user (WSL only); empty if unsure.
+pk_wt_settings() {
+  local up d f
+  up=$(cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r') && [[ -n $up ]] && d=$(wslpath -u "$up" 2>/dev/null) || d=
+  if [[ -n $d ]]; then f=$(ls "$d"/AppData/Local/Packages/Microsoft.WindowsTerminal*/LocalState/settings.json 2>/dev/null | head -1)
+  else   # fall back to the glob only when there is exactly one Windows user profile with Windows Terminal
+    local all; all=$(ls /mnt/c/Users/*/AppData/Local/Packages/Microsoft.WindowsTerminal*/LocalState/settings.json 2>/dev/null)
+    [[ $(printf '%s\n' "$all" | grep -c .) == 1 ]] && f=$all
+  fi
+  printf '%s' "${f:-}"
+}
