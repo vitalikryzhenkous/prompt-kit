@@ -2,3 +2,4 @@
 *.raw.json
 .env*
 secrets/
+CURRENT_STATE.md

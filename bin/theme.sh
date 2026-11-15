@@ -7,14 +7,15 @@ set -euo pipefail
 here=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)
 # shellcheck disable=SC1091
 . "$here/bin/versions.env"
+. "$here/bin/compat.sh"
 toml=${THEME_TOML:-$here/starship/starship.toml}
 usage() { echo "usage: theme.sh icon <directory|git_branch|nodejs|time|username> <glyph|nf-name|U+XXXX>" >&2; exit 2; }
 glyphnames() {
   local c=${XDG_CACHE_HOME:-$HOME/.cache}/prompt-kit/glyphnames.json
-  if ! { [[ -f $c ]] && echo "$NERDFONTS_GLYPHNAMES_SHA256  $c" | sha256sum -c - >/dev/null 2>&1; }; then
+  if ! { [[ -f $c ]] && echo "$NERDFONTS_GLYPHNAMES_SHA256  $c" | pk_sha256_check >/dev/null 2>&1; }; then
     mkdir -p "$(dirname "$c")"; local t; t=$(mktemp "$c.XXXXXX")
     curl -fsSL "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/$NERDFONTS_VERSION/glyphnames.json" -o "$t" \
-      && echo "$NERDFONTS_GLYPHNAMES_SHA256  $t" | sha256sum -c - >/dev/null || { rm -f "$t"; echo "glyphnames.json: download/sha256 failed" >&2; exit 1; }
+      && echo "$NERDFONTS_GLYPHNAMES_SHA256  $t" | pk_sha256_check >/dev/null || { rm -f "$t"; echo "glyphnames.json: download/sha256 failed" >&2; exit 1; }
     mv "$t" "$c"
   fi
   printf '%s' "$c"

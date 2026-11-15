@@ -24,6 +24,8 @@ backup() { local f=$1; [[ -n ${BACKED[$f]:-} ]] && return 0; BACKED[$f]=1; if [[
 
 # shellcheck disable=SC1091
 . "$REPO/bin/deps.sh"
+# shellcheck disable=SC1091
+. "$REPO/bin/compat.sh"
 hard=0
 for t in $(pk_missing_tools); do
   case $t in jq|curl|tar|sha256sum) echo "missing (required): $t  → $(pk_install_hint "$t")" >&2; hard=1;;
@@ -36,13 +38,16 @@ say "mode: $([[ $DRY == 1 ]] && echo DRY-RUN || echo APPLY); WSL=$WSL; shell=$KI
 # 1. starship (pinned)
 have=$(starship --version 2>/dev/null | head -1 | awk '{print $2}' || true)
 if [[ "v$have" == "$STARSHIP_VERSION" ]]; then say "starship $have already installed"
+elif [[ $(uname -s)-$(uname -m) != Linux-x86_64 ]]; then   # the pinned binary is linux x86_64 only
+  if [[ -n $have ]]; then say "starship $have already installed (pinned $STARSHIP_VERSION is Linux x86_64 only; using yours)"
+  else fail "no starship and no pinned binary for $(uname -s)-$(uname -m)  → $(pk_install_hint starship)"; fi
 else
   touch_ "$HOME/.local/bin/starship"
   if (( DRY )); then say "WOULD download starship $STARSHIP_VERSION (sha256-pinned) -> ~/.local/bin/starship"
   else
     tmp=$(mktemp -d); mkdir -p "$HOME/.local/bin"
     curl -fsSL "https://github.com/starship/starship/releases/download/$STARSHIP_VERSION/starship-x86_64-unknown-linux-musl.tar.gz" -o "$tmp/s.tgz" \
-      && echo "$STARSHIP_SHA256_linux_x86_64_musl  $tmp/s.tgz" | sha256sum -c - >/dev/null \
+      && echo "$STARSHIP_SHA256_linux_x86_64_musl  $tmp/s.tgz" | pk_sha256_check >/dev/null \
       && tar -xzf "$tmp/s.tgz" -C "$HOME/.local/bin" starship && say "starship $STARSHIP_VERSION installed" \
       || fail "starship download/verify failed"
     rm -rf "$tmp"
@@ -110,6 +115,10 @@ fi
 # 6. Claude Code adapter (statusLine key only; old command wrapped)
 for w in "${WITH[@]:-}"; do [[ $w == claude-code ]] || continue
   S=$HOME/.claude/settings.json; ours=$REPO/adapters/claude-code/statusline.sh
+  if [[ ! -f $S ]]; then   # Claude Code never started on this machine: start from an empty settings file
+    if (( DRY )); then say "WOULD create $S ({}) — then wire statusLine and the SessionEnd hook"; continue
+    else mkdir -p "$HOME/.claude"; echo '{}' > "$S"; say "created $S"; fi
+  fi
   cur=$(jq -r '.statusLine.command // empty' "$S")
   if [[ $cur == "$ours" ]]; then say "statusLine already points to adapter"
   else
