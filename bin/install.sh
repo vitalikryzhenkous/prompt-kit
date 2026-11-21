@@ -91,13 +91,33 @@ touch_ "$HOME/.cache/agent-status/"
 # 4. shell hook (once, last): ~/.bashrc or ~/.zshrc, block text from bin/hook-block.sh
 rc=$HOME/.${KIND}rc
 if (( HOOK )); then
-  if grep -q '^# prompt-kit' "$rc" 2>/dev/null; then say "hook already in $rc"
+  if grep -q '^# prompt-kit' "$rc" 2>/dev/null; then
+    if grep -q 'prompt-kit/host.env' "$rc"; then say "hook already in $rc"
+    else   # block from an older install: add the node-icon line before `starship init` (backup first)
+      touch_ "$rc"; backup "$rc"
+      if (( DRY )); then say "WOULD add the host.env icon line to the existing '# prompt-kit' block in $rc"
+      else add=$("$REPO/bin/hook-block.sh" "$KIND" | grep -E '^(# node icon|_pk_i=)'); tmp=$(mktemp)
+        awk -v add="$add" '/^# prompt-kit/ {seen=1} seen && !done && /^eval "\$\(starship init/ {print add; done=1} {print}' "$rc" > "$tmp" && cat "$tmp" > "$rc"; rm -f "$tmp"
+        say "icon line added to the hook in $rc"; fi
+    fi
   else
     grep -nE 'oh-my-posh|p10k|powerlevel|conda initialize|^ *(export )?PS1=' "$rc" 2>/dev/null | sed 's/^/  ⚠ possible prompt override: /' || true
     touch_ "$rc"; backup "$rc"
     if (( DRY )); then say "WOULD append '# prompt-kit' block (PATH + starship init $KIND) to $rc"
     else "$REPO/bin/hook-block.sh" "$KIND" >> "$rc"; say "hook appended to $rc"; fi
   fi
+fi
+
+# 4b. node icon file (local, outside git; the hook block reads it). Created with an example, never overwritten.
+he=$HOME/.config/prompt-kit/host.env
+if [[ -e $he ]]; then say "host.env exists, kept"
+else touch_ "$he"
+  if (( DRY )); then say "WOULD create $he (commented example)"
+  else mkdir -p "$HOME/.config/prompt-kit"
+    printf '%s\n' '# prompt-kit: icon of THIS node in the prompt. KEY=VALUE, one glyph. Local file, not in git.' \
+      '# Set it with: bin/theme.sh host-icon <glyph | nf-<set>-<name> | U+XXXX>   (e.g. nf-md-server)' \
+      '# PROMPT_KIT_HOST_ICON=' > "$he"
+    say "created $he"; fi
 fi
 
 # 5. Nerd Font on the Windows host (WSL)
