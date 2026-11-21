@@ -2,7 +2,7 @@
 palette = "custom"
 add_newline = false
 format = """
-$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time$hostname
+$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time${env_var.PROMPT_KIT_HOST_ICON}$hostname
 $character"""
 
 [palettes.custom]
@@ -44,10 +44,18 @@ format = "[](fg:pill)[  $time ]($style)[](fg:pill) "
 time_format = "%H:%M"
 style = "fg:time bg:pill"
 
-# Right-most segment: node name instead of the user name (look of the old [username] pill, own glyph).
+# Right-most segment: node icon + node name instead of the user name (look of the old [username] pill).
+# The icon comes from the local variable PROMPT_KIT_HOST_ICON, set outside git (~/.config/prompt-kit/host.env,
+# `bin/theme.sh host-icon <glyph|nf-name>`); the default below (nf-md-server) is used when it is unset.
+[env_var.PROMPT_KIT_HOST_ICON]
+variable = "PROMPT_KIT_HOST_ICON"
+default = "\U000F048B"
+format = "[](fg:user_bg)[ $env_value]($style)"
+style = "fg:time bg:user_bg"
+
 [hostname]
 ssh_only = false
-format = "[](fg:user_bg)[ 󰒋 $hostname ]($style)[](fg:user_bg)"
+format = "[ $hostname ]($style)[](fg:user_bg)"
 style = "fg:time bg:user_bg"
 
 # Off: to bring the user name back, set disabled = false and append $username to format.
