@@ -2,7 +2,7 @@
 palette = "custom"
 add_newline = false
 format = """
-$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time$hostname$username
+$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time$hostname
 $character"""
 
 [palettes.custom]
@@ -44,12 +44,15 @@ format = "[](fg:pill)[  $time ]($style)[](fg:pill) "
 time_format = "%H:%M"
 style = "fg:time bg:pill"
 
+# Right-most segment: node name instead of the user name (look of the old [username] pill, own glyph).
 [hostname]
 ssh_only = false
-format = "[](fg:pill)[ 󰒋 $hostname ]($style)[](fg:pill)"
-style = "fg:agent bg:pill"
+format = "[](fg:user_bg)[ 󰒋 $hostname ]($style)[](fg:user_bg)"
+style = "fg:time bg:user_bg"
 
+# Off: to bring the user name back, set disabled = false and append $username to format.
 [username]
+disabled = true
 show_always = true
 format = "[](fg:user_bg)[ 󱚣 $user ]($style)[](fg:user_bg)"
 style_user = "fg:time bg:user_bg"
