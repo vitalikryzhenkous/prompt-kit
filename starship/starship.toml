@@ -2,7 +2,7 @@
 palette = "custom"
 add_newline = false
 format = """
-$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time$username
+$directory$git_branch$git_status${custom.pill_end}$fill$nodejs${custom.agent}${custom.agent_warn}${custom.agent_root}$time$hostname$username
 $character"""
 
 [palettes.custom]
@@ -43,6 +43,11 @@ disabled = false
 format = "[](fg:pill)[  $time ]($style)[](fg:pill) "
 time_format = "%H:%M"
 style = "fg:time bg:pill"
+
+[hostname]
+ssh_only = false
+format = "[](fg:pill)[ 󰒋 $hostname ]($style)[](fg:pill)"
+style = "fg:agent bg:pill"
 
 [username]
 show_always = true
